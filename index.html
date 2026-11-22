@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyChat</title>
+    <title>Helligram</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #0e1621; color: #f5f5f5; height: 100vh; display: flex; flex-direction: column; }
-        
+
         /* Header */
         .header { background: #17212b; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0b1017; }
-        .header h2 { font-size: 18px; color: #fff; }
-        .online-badge { font-size: 13px; color: #6ab2f2; }
+        .header-left h2 { font-size: 18px; color: #fff; }
+        .online-badge { font-size: 12px; color: #6ab2f2; }
+        .logout-btn { background: #242f3d; color: #ff6b6b; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
 
         /* Chat Area */
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -26,29 +27,39 @@
         .input-area { background: #17212b; padding: 10px 15px; display: flex; gap: 10px; }
         #msgInput { flex: 1; background: #242f3d; border: none; color: #fff; padding: 12px 15px; border-radius: 20px; font-size: 15px; outline: none; }
         #sendBtn { background: #5288c1; color: white; border: none; padding: 0 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-        #sendBtn:hover { background: #4676a8; }
 
-        /* Login Overlay */
-        #loginOverlay { position: fixed; inset: 0; background: #0e1621; display: flex; justify-content: center; align-items: center; z-index: 10; }
-        .login-box { background: #17212b; padding: 30px; border-radius: 12px; text-align: center; width: 90%; max-width: 340px; }
-        .login-box h2 { margin-bottom: 15px; color: #6ab2f2; }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: none; background: #242f3d; color: #fff; font-size: 15px; outline: none; }
-        .login-box button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #5288c1; color: #fff; font-size: 15px; font-weight: bold; cursor: pointer; }
+        /* Auth Overlay */
+        #authOverlay { position: fixed; inset: 0; background: #0e1621; display: flex; justify-content: center; align-items: center; z-index: 10; }
+        .auth-box { background: #17212b; padding: 30px; border-radius: 12px; text-align: center; width: 90%; max-width: 350px; }
+        .auth-box h2 { margin-bottom: 20px; color: #6ab2f2; }
+        .auth-box input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: none; background: #242f3d; color: #fff; font-size: 15px; outline: none; }
+        .auth-box button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #5288c1; color: #fff; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .toggle-text { margin-top: 15px; font-size: 13px; color: #8c9ba5; cursor: pointer; }
+        .toggle-text span { color: #6ab2f2; font-weight: bold; }
+        #authError { color: #ff6b6b; font-size: 13px; margin-bottom: 10px; min-height: 18px; }
     </style>
 </head>
 <body>
 
-<div id="loginOverlay">
-    <div class="login-box">
-        <h2>MyChat</h2>
-        <input type="text" id="usernameInput" placeholder="Apna naam likhein..." maxlength="20">
-        <button onclick="joinChat()">Join Chat</button>
+<div id="authOverlay">
+    <div class="auth-box">
+        <h2 id="authTitle">Helligram Login</h2>
+        <div id="authError"></div>
+        <input type="text" id="usernameInput" placeholder="Username" maxlength="20">
+        <input type="password" id="passwordInput" placeholder="Password" onkeypress="if(event.key==='Enter') submitAuth()">
+        <button id="authBtn" onclick="submitAuth()">Login</button>
+        <div class="toggle-text" onclick="toggleMode()">
+            <span id="toggleLabel">Naya account banana hai? Sign Up</span>
+        </div>
     </div>
 </div>
 
 <div class="header">
-    <h2>MyChat Lobby</h2>
-    <span class="online-badge" id="onlineCount">0 online</span>
+    <div class="header-left">
+        <h2>Helligram</h2>
+        <span class="online-badge" id="onlineCount">Connecting...</span>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
 </div>
 
 <div id="messages"></div>
@@ -60,40 +71,92 @@
 
 <script>
     let ws;
-    let myName = "";
+    let isSignup = false;
+    let myName = localStorage.getItem("hg_username") || "";
+    let myToken = localStorage.getItem("hg_token") || "";
 
-    function joinChat() {
-        const input = document.getElementById("usernameInput").value.trim();
-        if (!input) return alert("Pehle apna naam likhein!");
-        myName = input;
-        document.getElementById("loginOverlay").style.display = "none";
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.innerText = text;
+        return div.innerHTML;
+    }
+
+    function toggleMode() {
+        isSignup = !isSignup;
+        document.getElementById("authTitle").innerText = isSignup ? "Helligram Sign Up" : "Helligram Login";
+        document.getElementById("authBtn").innerText = isSignup ? "Create Account" : "Login";
+        document.getElementById("toggleLabel").innerText = isSignup ? "Pehle se account hai? Login" : "Naya account banana hai? Sign Up";
+        document.getElementById("authError").innerText = "";
+    }
+
+    async function submitAuth() {
+        const username = document.getElementById("usernameInput").value.trim();
+        const password = document.getElementById("passwordInput").value;
+        const errDiv = document.getElementById("authError");
+        errDiv.innerText = "";
+
+        const endpoint = isSignup ? "/api/signup" : "/api/login";
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                errDiv.innerText = data.detail || "Error aaya hai";
+                return;
+            }
+            myName = data.username;
+            myToken = data.token;
+            localStorage.setItem("hg_username", myName);
+            localStorage.setItem("hg_token", myToken);
+            connectWebSocket();
+        } catch (e) {
+            errDiv.innerText = "Server se connect nahi ho saka.";
+        }
+    }
+
+    function appendMessage(data) {
+        const msgBox = document.getElementById("messages");
+        const div = document.createElement("div");
+        if (data.type === "system") {
+            div.className = "system-msg";
+            div.innerText = data.text;
+        } else {
+            const isMe = data.user === myName;
+            div.className = `msg ${isMe ? "me" : "other"}`;
+            div.innerHTML = `
+                ${!isMe ? `<div class="msg-user">${escapeHtml(data.user)}</div>` : ""}
+                <div>${escapeHtml(data.text)}</div>
+                <div class="msg-time">${escapeHtml(data.time)}</div>
+            `;
+        }
+        msgBox.appendChild(div);
+        msgBox.scrollTop = msgBox.scrollHeight;
+    }
+
+    function connectWebSocket() {
+        document.getElementById("authOverlay").style.display = "none";
+        document.getElementById("messages").innerHTML = "";
 
         const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-        ws = new WebSocket(`${protocol}//${location.host}/ws/${encodeURIComponent(myName)}`);
+        ws = new WebSocket(`${protocol}//${location.host}/ws/${myToken}`);
 
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.online !== undefined) {
                 document.getElementById("onlineCount").innerText = `${data.online} online`;
             }
-
-            const msgBox = document.getElementById("messages");
-            const div = document.createElement("div");
-
-            if (data.type === "system") {
-                div.className = "system-msg";
-                div.innerText = data.text;
+            if (data.type === "history") {
+                data.messages.forEach(appendMessage);
             } else {
-                const isMe = data.user === myName;
-                div.className = `msg ${isMe ? "me" : "other"}`;
-                div.innerHTML = `
-                    ${!isMe ? `<div class="msg-user">${data.user}</div>` : ""}
-                    <div>${data.text}</div>
-                    <div class="msg-time">${data.time}</div>
-                `;
+                appendMessage(data);
             }
-            msgBox.appendChild(div);
-            msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        ws.onclose = (e) => {
+            if (e.code === 1008) logout();
         };
     }
 
@@ -104,6 +167,17 @@
             ws.send(text);
             input.value = "";
         }
+    }
+
+    function logout() {
+        localStorage.removeItem("hg_username");
+        localStorage.removeItem("hg_token");
+        if (ws) ws.close();
+        location.reload();
+    }
+
+    if (myToken && myName) {
+        connectWebSocket();
     }
 </script>
 </body>
