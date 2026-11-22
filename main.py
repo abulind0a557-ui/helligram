@@ -3,7 +3,9 @@ import json
 import sqlite3
 import hashlib
 import secrets
-from datetime import datetime
+import smtplib
+from email.message import EmailMessage
+from datetime import datetime, timedelta
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Header
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -11,6 +13,10 @@ from pydantic import BaseModel
 app = FastAPI()
 
 DB_PATH = "/data/helligram.db" if os.path.exists("/data") else "helligram.db"
+
+# Railway Variables se Gmail SMTP credentials uthayega
+SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -27,6 +33,24 @@ def init_db():
             password_hash TEXT NOT NULL,
             token TEXT UNIQUE NOT NULL,
             created_at TEXT NOT NULL
+        )
+    """)
+    for col_sql in [
+        "ALTER TABLE users ADD COLUMN display_name TEXT DEFAULT ''",
+        "ALTER TABLE users ADD COLUMN bio TEXT DEFAULT ''",
+        "ALTER TABLE users ADD COLUMN show_last_seen INTEGER DEFAULT 1",
+        "ALTER TABLE users ADD COLUMN email TEXT DEFAULT ''"
+    ]:
+        try:
+            cur.execute(col_sql)
+        except sqlite3.OperationalError:
+            pass
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS email_otps (
+            email TEXT PRIMARY KEY,
+            code TEXT NOT NULL,
+            expires_at TEXT NOT NULL
         )
     """)
     cur.execute("""
@@ -73,7 +97,31 @@ def get_user_by_token(token: str):
     conn.close()
     return row["username"] if row else None
 
-class AuthRequest(BaseModel):
+def send_otp_email(to_email: str, code: str) -> bool:
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        print(f"[HELLIGRAM TEST OTP] Email: {to_email} | Code: {code}", flush=True)
+        return False
+    msg = EmailMessage()
+    msg["Subject"] = f"Helligram Verification Code: {code}"
+    msg["From"] = f"Helligram <{SMTP_EMAIL}>"
+    msg["To"] = to_email
+    msg.set_content(f"Assalam-o-Alaikum!\n\nAapka Helligram verification code hai: {code}\n\nYeh code 10 minutes tak valid hai. Isay kisi ke saath share na karein.")
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(SMTP_EMAIL, SMTP_PASSWORD)
+        smtp.send_message(msg)
+    return True
+
+# --- REQUEST MODELS ---
+class LoginRequest(BaseModel):
+    identifier: str  # username ya email
+    password: str
+
+class SendOtpRequest(BaseModel):
+    email: str
+
+class CompleteSignupRequest(BaseModel):
+    email: str
+    code: str
     username: str
     password: str
 
@@ -83,6 +131,17 @@ class CreateRoomRequest(BaseModel):
 
 class StartDMRequest(BaseModel):
     target_username: str
+
+class ProfileUpdateRequest(BaseModel):
+    display_name: str
+    bio: str
+
+class PrivacyUpdateRequest(BaseModel):
+    show_last_seen: bool
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
 
 class ConnectionManager:
     def __init__(self):
@@ -98,6 +157,9 @@ class ConnectionManager:
             if not self.user_sockets[username]:
                 del self.user_sockets[username]
 
+    def is_online(self, username: str) -> bool:
+        return bool(self.user_sockets.get(username))
+
     async def send_to_users(self, usernames: list[str], payload: dict):
         msg_str = json.dumps(payload)
         for u in usernames:
@@ -109,38 +171,191 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-@app.post("/api/signup")
-async def signup(req: AuthRequest):
-    username = req.username.strip()
-    if len(username) < 3 or len(req.password) < 4:
-        raise HTTPException(status_code=400, detail="Username kam az kam 3 aur password 4 characters ka ho.")
+# --- PHASE 2: EMAIL OTP & LIVE USERNAME CHECK ---
+@app.get("/api/check-username")
+async def check_username(username: str = ""):
+    u = username.strip()
+    if len(u) < 3:
+        return {"available": False, "message": "Kam az kam 3 characters"}
+    if not all(c.isalnum() or c == "_" for c in u):
+        return {"available": False, "message": "Sirf letters, numbers aur _ use karein"}
     conn = get_db()
     cur = conn.cursor()
-    try:
-        token = secrets.token_hex(32)
-        cur.execute(
-            "INSERT INTO users (username, password_hash, token, created_at) VALUES (?, ?, ?, ?)",
-            (username, hash_password(req.password), token, datetime.now().isoformat())
-        )
-        conn.commit()
-        return {"username": username, "token": token}
-    except sqlite3.IntegrityError:
-        raise HTTPException(status_code=400, detail="Yeh username pehle se mojood hai.")
-    finally:
+    cur.execute("SELECT 1 FROM users WHERE LOWER(username) = LOWER(?)", (u,))
+    exists = cur.fetchone() is not None
+    conn.close()
+    if exists:
+        return {"available": False, "message": "Yeh username pehle se lia ja chuka hai"}
+    return {"available": True, "message": "Username available hai ✓"}
+
+@app.post("/api/auth/send-otp")
+async def request_otp(req: SendOtpRequest):
+    email = req.email.strip().lower()
+    if "@" not in email or "." not in email.split("@")[-1]:
+        raise HTTPException(status_code=400, detail="Sahi email address likhein.")
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM users WHERE LOWER(email) = ?", (email,))
+    if cur.fetchone():
         conn.close()
+        raise HTTPException(status_code=400, detail="Is email par pehle se account bana hua hai.")
+
+    code = f"{secrets.randbelow(900000) + 100000}"
+    expires = (datetime.now() + timedelta(minutes=10)).isoformat()
+    cur.execute(
+        "INSERT OR REPLACE INTO email_otps (email, code, expires_at) VALUES (?, ?, ?)",
+        (email, code, expires)
+    )
+    conn.commit()
+    conn.close()
+
+    try:
+        sent = send_otp_email(email, code)
+    except Exception as e:
+        print("SMTP Error:", e, flush=True)
+        raise HTTPException(status_code=500, detail="Email bhejne mein masla aaya. SMTP settings check karein.")
+
+    if sent:
+        return {"ok": True, "message": "6-digit code aapki email par bhej diya gaya hai."}
+    return {"ok": True, "message": "Test Mode: SMTP set nahi hai, code Railway Logs mein print ho gaya hai."}
+
+@app.post("/api/auth/complete-signup")
+async def complete_signup(req: CompleteSignupRequest):
+    email = req.email.strip().lower()
+    code = req.code.strip()
+    username = req.username.strip()
+
+    if len(username) < 3 or not all(c.isalnum() or c == "_" for c in username):
+        raise HTTPException(status_code=400, detail="Valid username likhein (min 3 chars, letters/numbers/_).")
+    if len(req.password) < 4:
+        raise HTTPException(status_code=400, detail="Password kam az kam 4 characters ka ho.")
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT code, expires_at FROM email_otps WHERE email = ?", (email,))
+    otp_row = cur.fetchone()
+    if not otp_row or otp_row["code"] != code:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Verification code ghalat hai.")
+    if datetime.now() > datetime.fromisoformat(otp_row["expires_at"]):
+        conn.close()
+        raise HTTPException(status_code=400, detail="Code expire ho gaya hai, naya code mangwayein.")
+
+    cur.execute("SELECT 1 FROM users WHERE LOWER(username) = LOWER(?)", (username,))
+    if cur.fetchone():
+        conn.close()
+        raise HTTPException(status_code=400, detail="Yeh username pehle se mojood hai.")
+
+    token = secrets.token_hex(32)
+    cur.execute(
+        "INSERT INTO users (username, email, password_hash, token, created_at, display_name, bio, show_last_seen) VALUES (?, ?, ?, ?, ?, ?, '', 1)",
+        (username, email, hash_password(req.password), token, datetime.now().isoformat(), username)
+    )
+    cur.execute("DELETE FROM email_otps WHERE email = ?", (email,))
+    conn.commit()
+    conn.close()
+    return {"username": username, "token": token}
 
 @app.post("/api/login")
-async def login(req: AuthRequest):
-    username = req.username.strip()
+async def login(req: LoginRequest):
+    ident = req.identifier.strip()
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT username, password_hash, token FROM users WHERE username = ?", (username,))
+    cur.execute(
+        "SELECT username, password_hash, token FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)",
+        (ident, ident)
+    )
     row = cur.fetchone()
     conn.close()
     if not row or row["password_hash"] != hash_password(req.password):
-        raise HTTPException(status_code=401, detail="Username ya password ghalat hai.")
+        raise HTTPException(status_code=401, detail="Username/Email ya password ghalat hai.")
     return {"username": row["username"], "token": row["token"]}
 
+# --- ACCOUNT, PRIVACY & STORAGE APIS ---
+@app.get("/api/me")
+async def get_me(x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT username, email, display_name, bio, show_last_seen FROM users WHERE username = ?", (username,))
+    row = cur.fetchone()
+    conn.close()
+    return {
+        "username": row["username"],
+        "email": row["email"] or "",
+        "display_name": row["display_name"] or row["username"],
+        "bio": row["bio"] or "",
+        "show_last_seen": bool(row["show_last_seen"])
+    }
+
+@app.post("/api/me/profile")
+async def update_profile(req: ProfileUpdateRequest, x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    display_name = req.display_name.strip()[:30] or username
+    bio = req.bio.strip()[:120]
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET display_name = ?, bio = ? WHERE username = ?", (display_name, bio, username))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "display_name": display_name, "bio": bio}
+
+@app.post("/api/me/privacy")
+async def update_privacy(req: PrivacyUpdateRequest, x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET show_last_seen = ? WHERE username = ?", (1 if req.show_last_seen else 0, username))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "show_last_seen": req.show_last_seen}
+
+@app.post("/api/me/password")
+async def change_password(req: ChangePasswordRequest, x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if len(req.new_password) < 4:
+        raise HTTPException(status_code=400, detail="Naya password kam az kam 4 characters ka ho.")
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+    row = cur.fetchone()
+    if not row or row["password_hash"] != hash_password(req.old_password):
+        conn.close()
+        raise HTTPException(status_code=400, detail="Purana password ghalat hai.")
+    cur.execute("UPDATE users SET password_hash = ? WHERE username = ?", (hash_password(req.new_password), username))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+@app.get("/api/stats")
+async def get_stats(x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) as c FROM room_members WHERE username = ?", (username,))
+    total_chats = cur.fetchone()["c"]
+    cur.execute("""
+        SELECT COUNT(*) as c FROM room_messages m
+        JOIN room_members rm ON m.room_id = rm.room_id
+        WHERE rm.username = ?
+    """, (username,))
+    total_msgs = cur.fetchone()["c"]
+    conn.close()
+    db_size_kb = round(os.path.getsize(DB_PATH) / 1024, 1) if os.path.exists(DB_PATH) else 0
+    return {"total_chats": total_chats, "total_messages": total_msgs, "db_size_kb": db_size_kb}
+
+# --- ROOMS & MESSAGING ---
 @app.get("/api/rooms")
 async def get_my_rooms(x_auth_token: str = Header(None)):
     username = get_user_by_token(x_auth_token)
@@ -164,10 +379,18 @@ async def get_my_rooms(x_auth_token: str = Header(None)):
     rooms = []
     for r in rows:
         display_name = r["name"]
+        status_text = f"{r['member_count']} {'subscribers' if r['type'] == 'channel' else 'members'}"
         if r["type"] == "dm":
             cur.execute("SELECT username FROM room_members WHERE room_id = ? AND username != ?", (r["id"], username))
             other = cur.fetchone()
-            display_name = other["username"] if other else username
+            other_u = other["username"] if other else username
+            cur.execute("SELECT display_name, show_last_seen FROM users WHERE username = ?", (other_u,))
+            u_row = cur.fetchone()
+            display_name = (u_row["display_name"] if u_row and u_row["display_name"] else other_u)
+            if u_row and u_row["show_last_seen"] and manager.is_online(other_u):
+                status_text = "online"
+            else:
+                status_text = "last seen recently"
         rooms.append({
             "id": r["id"],
             "name": display_name,
@@ -175,7 +398,8 @@ async def get_my_rooms(x_auth_token: str = Header(None)):
             "owner": r["owner_username"],
             "last_msg": r["last_msg"] or "No messages yet",
             "last_time": r["last_time"] or "",
-            "members": r["member_count"]
+            "members": r["member_count"],
+            "status": status_text
         })
     conn.close()
     return {"rooms": rooms}
@@ -185,7 +409,7 @@ async def search_all(q: str = "", x_auth_token: str = Header(None)):
     username = get_user_by_token(x_auth_token)
     if not username:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    q = q.strip()
+    q = q.strip().lstrip("@")
     if not q:
         return {"users": [], "rooms": []}
 
