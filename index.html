@@ -12,6 +12,8 @@
         .header { background: #17212b; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0b1017; }
         .header-left h2 { font-size: 18px; color: #fff; }
         .online-badge { font-size: 12px; color: #6ab2f2; }
+        .header-actions { display: flex; gap: 8px; }
+        .bot-btn { background: #2b5278; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
         .logout-btn { background: #242f3d; color: #ff6b6b; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
 
         /* Chat Area */
@@ -19,7 +21,9 @@
         .msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 15px; line-height: 1.4; word-wrap: break-word; }
         .msg.me { align-self: flex-end; background: #2b5278; border-bottom-right-radius: 2px; }
         .msg.other { align-self: flex-start; background: #182533; border-bottom-left-radius: 2px; }
-        .msg-user { font-size: 12px; font-weight: bold; color: #6ab2f2; margin-bottom: 3px; }
+        .msg.bot { align-self: flex-start; background: #1c2e3d; border: 1px solid #3d6c99; border-bottom-left-radius: 2px; }
+        .msg-user { font-size: 12px; font-weight: bold; color: #6ab2f2; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
+        .bot-tag { background: #5288c1; color: #fff; font-size: 9px; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.5px; }
         .msg-time { font-size: 10px; color: #8c9ba5; text-align: right; margin-top: 4px; }
         .system-msg { align-self: center; background: #182533; color: #8c9ba5; font-size: 12px; padding: 4px 12px; border-radius: 12px; }
 
@@ -28,38 +32,64 @@
         #msgInput { flex: 1; background: #242f3d; border: none; color: #fff; padding: 12px 15px; border-radius: 20px; font-size: 15px; outline: none; }
         #sendBtn { background: #5288c1; color: white; border: none; padding: 0 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 
-        /* Auth Overlay */
-        #authOverlay { position: fixed; inset: 0; background: #0e1621; display: flex; justify-content: center; align-items: center; z-index: 10; }
-        .auth-box { background: #17212b; padding: 30px; border-radius: 12px; text-align: center; width: 90%; max-width: 350px; }
-        .auth-box h2 { margin-bottom: 20px; color: #6ab2f2; }
-        .auth-box input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: none; background: #242f3d; color: #fff; font-size: 15px; outline: none; }
-        .auth-box button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #5288c1; color: #fff; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .toggle-text { margin-top: 15px; font-size: 13px; color: #8c9ba5; cursor: pointer; }
+        /* Auth & BotFather Modals */
+        .overlay { position: fixed; inset: 0; background: rgba(14, 22, 33, 0.92); display: flex; justify-content: center; align-items: center; z-index: 10; }
+        .modal-box { background: #17212b; padding: 25px; border-radius: 12px; width: 92%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+        .modal-box h2 { margin-bottom: 15px; color: #6ab2f2; text-align: center; }
+        .modal-box input { width: 100%; padding: 11px; margin-bottom: 10px; border-radius: 8px; border: none; background: #242f3d; color: #fff; font-size: 14px; outline: none; }
+        .primary-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; background: #5288c1; color: #fff; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .toggle-text { margin-top: 15px; font-size: 13px; color: #8c9ba5; cursor: pointer; text-align: center; }
         .toggle-text span { color: #6ab2f2; font-weight: bold; }
-        #authError { color: #ff6b6b; font-size: 13px; margin-bottom: 10px; min-height: 18px; }
+        .err-text { color: #ff6b6b; font-size: 13px; margin-bottom: 10px; text-align: center; min-height: 16px; }
+
+        /* Bot List */
+        .bot-item { background: #242f3d; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        .bot-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .bot-name { font-weight: bold; color: #6ab2f2; font-size: 14px; }
+        .bot-token { background: #0e1621; padding: 6px; border-radius: 5px; font-family: monospace; font-size: 11px; word-break: break-all; color: #a5d6a7; }
+        .small-btn { background: #5288c1; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 6px; margin-right: 5px; }
+        .del-btn { background: #c0392b; }
+        .close-btn { background: #242f3d; color: #ccc; margin-top: 12px; }
     </style>
 </head>
 <body>
 
-<div id="authOverlay">
-    <div class="auth-box">
+<!-- Auth Overlay -->
+<div id="authOverlay" class="overlay">
+    <div class="modal-box">
         <h2 id="authTitle">Helligram Login</h2>
-        <div id="authError"></div>
+        <div id="authError" class="err-text"></div>
         <input type="text" id="usernameInput" placeholder="Username" maxlength="20">
         <input type="password" id="passwordInput" placeholder="Password" onkeypress="if(event.key==='Enter') submitAuth()">
-        <button id="authBtn" onclick="submitAuth()">Login</button>
+        <button id="authBtn" class="primary-btn" onclick="submitAuth()">Login</button>
         <div class="toggle-text" onclick="toggleMode()">
             <span id="toggleLabel">Naya account banana hai? Sign Up</span>
         </div>
     </div>
 </div>
 
+<!-- BotFather Modal -->
+<div id="botModal" class="overlay" style="display: none;">
+    <div class="modal-box">
+        <h2>🤖 Helligram BotFather</h2>
+        <div id="botError" class="err-text"></div>
+        <input type="text" id="newBotName" placeholder="Naye bot ka naam (e.g. helper_bot)">
+        <button class="primary-btn" onclick="createBot()">+ Create New Bot</button>
+        <div id="botList"></div>
+        <button class="primary-btn close-btn" onclick="closeBotModal()">Close</button>
+    </div>
+</div>
+
+<!-- Main UI -->
 <div class="header">
     <div class="header-left">
         <h2>Helligram</h2>
         <span class="online-badge" id="onlineCount">Connecting...</span>
     </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <div class="header-actions">
+        <button class="bot-btn" onclick="openBotModal()">🤖 Bots</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
 </div>
 
 <div id="messages"></div>
@@ -103,10 +133,7 @@
                 body: JSON.stringify({ username, password })
             });
             const data = await res.json();
-            if (!res.ok) {
-                errDiv.innerText = data.detail || "Error aaya hai";
-                return;
-            }
+            if (!res.ok) { errDiv.innerText = data.detail || "Error aaya hai"; return; }
             myName = data.username;
             myToken = data.token;
             localStorage.setItem("hg_username", myName);
@@ -124,10 +151,11 @@
             div.className = "system-msg";
             div.innerText = data.text;
         } else {
-            const isMe = data.user === myName;
-            div.className = `msg ${isMe ? "me" : "other"}`;
+            const isMe = !data.is_bot && data.user === myName;
+            div.className = `msg ${data.is_bot ? "bot" : (isMe ? "me" : "other")}`;
+            const botBadge = data.is_bot ? `<span class="bot-tag">BOT</span>` : "";
             div.innerHTML = `
-                ${!isMe ? `<div class="msg-user">${escapeHtml(data.user)}</div>` : ""}
+                ${!isMe ? `<div class="msg-user">${escapeHtml(data.user)} ${botBadge}</div>` : ""}
                 <div>${escapeHtml(data.text)}</div>
                 <div class="msg-time">${escapeHtml(data.time)}</div>
             `;
@@ -154,10 +182,7 @@
                 appendMessage(data);
             }
         };
-
-        ws.onclose = (e) => {
-            if (e.code === 1008) logout();
-        };
+        ws.onclose = (e) => { if (e.code === 1008) logout(); };
     }
 
     function sendMessage() {
@@ -169,6 +194,62 @@
         }
     }
 
+    // --- BOTFATHER FUNCTIONS ---
+    async function openBotModal() {
+        document.getElementById("botModal").style.display = "flex";
+        document.getElementById("botError").innerText = "";
+        await loadBots();
+    }
+
+    function closeBotModal() {
+        document.getElementById("botModal").style.display = "none";
+    }
+
+    async function loadBots() {
+        const res = await fetch("/api/bots/list", { headers: { "x-auth-token": myToken } });
+        const data = await res.json();
+        const listDiv = document.getElementById("botList");
+        if (!data.bots || data.bots.length === 0) {
+            listDiv.innerHTML = `<p style="color:#8c9ba5; font-size:13px; text-align:center; margin-top:15px;">Abhi tak koi bot nahi banaya.</p>`;
+            return;
+        }
+        listDiv.innerHTML = data.bots.map(b => `
+            <div class="bot-item">
+                <div class="bot-item-header">
+                    <span class="bot-name">@${escapeHtml(b.bot_name)}</span>
+                </div>
+                <div class="bot-token">${escapeHtml(b.token)}</div>
+                <button class="small-btn" onclick="copyToken('${escapeHtml(b.token)}')">Copy Token</button>
+                <button class="small-btn del-btn" onclick="deleteBot(${b.id})">Delete</button>
+            </div>
+        `).join("");
+    }
+
+    async function createBot() {
+        const nameInput = document.getElementById("newBotName");
+        const errDiv = document.getElementById("botError");
+        errDiv.innerText = "";
+        const res = await fetch("/api/bots/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-auth-token": myToken },
+            body: JSON.stringify({ bot_name: nameInput.value })
+        });
+        const data = await res.json();
+        if (!res.ok) { errDiv.innerText = data.detail || "Bot create nahi ho saka"; return; }
+        nameInput.value = "";
+        await loadBots();
+    }
+
+    async function deleteBot(id) {
+        await fetch(`/api/bots/${id}`, { method: "DELETE", headers: { "x-auth-token": myToken } });
+        await loadBots();
+    }
+
+    function copyToken(token) {
+        navigator.clipboard.writeText(token);
+        alert("Bot Token copy ho gaya!");
+    }
+
     function logout() {
         localStorage.removeItem("hg_username");
         localStorage.removeItem("hg_token");
@@ -176,9 +257,7 @@
         location.reload();
     }
 
-    if (myToken && myName) {
-        connectWebSocket();
-    }
+    if (myToken && myName) connectWebSocket();
 </script>
 </body>
 </html>
