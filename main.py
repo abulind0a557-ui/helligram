@@ -33,7 +33,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS rooms (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            type TEXT NOT NULL, -- 'dm', 'group', 'channel'
+            type TEXT NOT NULL,
             owner_username TEXT NOT NULL,
             created_at TEXT NOT NULL
         )
@@ -79,15 +79,13 @@ class AuthRequest(BaseModel):
 
 class CreateRoomRequest(BaseModel):
     name: str
-    type: str  # 'group' or 'channel'
+    type: str
 
 class StartDMRequest(BaseModel):
     target_username: str
 
-# --- WEBSOCKET MANAGER ---
 class ConnectionManager:
     def __init__(self):
-        # username -> set of active WebSockets (taake mobile + PC dono par chale)
         self.user_sockets: dict[str, set[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, username: str):
@@ -111,7 +109,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# --- AUTH ROUTES ---
 @app.post("/api/signup")
 async def signup(req: AuthRequest):
     username = req.username.strip()
@@ -144,7 +141,6 @@ async def login(req: AuthRequest):
         raise HTTPException(status_code=401, detail="Username ya password ghalat hai.")
     return {"username": row["username"], "token": row["token"]}
 
-# --- CHATS, GROUPS & CHANNELS API ---
 @app.get("/api/rooms")
 async def get_my_rooms(x_auth_token: str = Header(None)):
     username = get_user_by_token(x_auth_token)
@@ -169,7 +165,6 @@ async def get_my_rooms(x_auth_token: str = Header(None)):
     for r in rows:
         display_name = r["name"]
         if r["type"] == "dm":
-            # DM mein doosre bande ka naam dikhayein
             cur.execute("SELECT username FROM room_members WHERE room_id = ? AND username != ?", (r["id"], username))
             other = cur.fetchone()
             display_name = other["username"] if other else username
@@ -220,7 +215,6 @@ async def start_dm(req: StartDMRequest, x_auth_token: str = Header(None)):
         conn.close()
         raise HTTPException(status_code=404, detail="User nahi mila.")
 
-    # Check karein agar pehle se DM mojood hai
     cur.execute("""
         SELECT r.id FROM rooms r
         JOIN room_members m1 ON r.id = m1.room_id AND m1.username = ?
@@ -303,7 +297,6 @@ async def get_room_messages(room_id: int, x_auth_token: str = Header(None)):
     conn.close()
     return {"messages": msgs}
 
-# --- FRONTEND & WEBSOCKET ---
 @app.get("/")
 async def get():
     with open("index.html", "r", encoding="utf-8") as f:
@@ -335,7 +328,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                     conn.close()
                     continue
 
-                # Channel mein sirf owner post kar sakta hai
                 if room["type"] == "channel" and room["owner_username"] != username:
                     conn.close()
                     continue
