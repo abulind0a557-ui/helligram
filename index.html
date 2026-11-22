@@ -6,207 +6,205 @@
     <title>Helligram</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+
         :root {
-            --bg-main: #0e1621;
-            --bg-sidebar: #17212b;
-            --bg-elevated: #1e2c3a;
-            --bg-hover: #202b36;
-            --bg-active: #2b5278;
-            --bg-input: #242f3d;
-            --msg-in: #182533;
-            --msg-out: #2b5278;
-            --accent: #5288c1;
-            --accent-bright: #6ab2f2;
-            --text-main: #f5f5f5;
-            --text-muted: #7f91a4;
-            --border: #0b1017;
-            --danger: #ff595a;
+            --bg-main: #0e0e0e;
+            --bg-sidebar: #141414;
+            --bg-card: #1c1c1e;
+            --bg-elevated: #242426;
+            --bg-hover: #222224;
+            --bg-input: #232325;
+            --msg-in: #1f1f22;
+            --msg-out: #2e4a2b;
+            --accent: #7cb342;
+            --accent-soft: rgba(124, 179, 66, 0.16);
+            --text-main: #f2f2f2;
+            --text-muted: #8e8e93;
+            --border: #222224;
+            --nav-bg: rgba(26, 26, 28, 0.94);
+            --danger: #ff5252;
+            --msg-font-size: 14.5px;
         }
 
-        body { background: var(--bg-main); color: var(--text-main); height: 100vh; height: 100dvh; overflow: hidden; display: flex; }
+        body.day-mode {
+            --bg-main: #eef1f4;
+            --bg-sidebar: #ffffff;
+            --bg-card: #f5f6f8;
+            --bg-elevated: #ffffff;
+            --bg-hover: #f0f2f5;
+            --bg-input: #eff1f4;
+            --msg-in: #ffffff;
+            --msg-out: #dcf8c6;
+            --text-main: #111111;
+            --text-muted: #6e737b;
+            --border: #e5e7eb;
+            --nav-bg: rgba(255, 255, 255, 0.95);
+        }
 
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        body { background: var(--bg-main); color: var(--text-main); height: 100vh; height: 100dvh; overflow: hidden; display: flex; transition: background 0.2s, color 0.2s; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 10px; }
-
+        ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.25); border-radius: 10px; }
         svg { display: block; fill: currentColor; }
 
-        /* --- SIDEBAR --- */
-        .sidebar { width: 360px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; position: relative; flex-shrink: 0; }
+        .sidebar { width: 380px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; position: relative; flex-shrink: 0; }
+        .app-header { padding: 14px 16px 8px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+        .app-title { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+        .icon-btn { background: none; border: none; color: var(--text-main); width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .icon-btn:hover { background: var(--bg-hover); }
 
-        .sidebar-top { padding: 10px 12px 8px; display: flex; align-items: center; gap: 10px; }
-        .icon-circle-btn { background: none; border: none; color: var(--text-muted); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s, color 0.15s; flex-shrink: 0; }
-        .icon-circle-btn:hover { background: var(--bg-hover); color: #fff; }
+        .dropdown-backdrop { position: fixed; inset: 0; z-index: 45; display: none; }
+        .dropdown-backdrop.open { display: block; }
+        .dropdown-menu { position: absolute; top: 52px; right: 14px; width: 220px; background: var(--bg-elevated); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.55); border: 1px solid var(--border); overflow: hidden; z-index: 50; display: none; padding: 6px 0; }
+        .dropdown-menu.open { display: block; }
+        .drop-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; cursor: pointer; font-size: 14.5px; font-weight: 500; }
+        .drop-item:hover { background: var(--bg-hover); }
+        .drop-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+        .drop-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
-        .search-wrap { flex: 1; position: relative; }
-        .search-wrap input { width: 100%; background: var(--bg-input); border: 1.5px solid transparent; color: #fff; padding: 9px 14px 9px 38px; border-radius: 22px; font-size: 14px; outline: none; transition: 0.2s; }
-        .search-wrap input:focus { border-color: var(--accent-bright); background: #192430; }
-        .search-wrap input::placeholder { color: var(--text-muted); }
-        .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+        .search-wrap { padding: 6px 14px 10px; position: relative; }
+        .search-wrap input { width: 100%; background: var(--bg-input); border: none; color: var(--text-main); padding: 11px 16px 11px 42px; border-radius: 24px; font-size: 14.5px; outline: none; }
+        .search-icon { position: absolute; left: 28px; top: 50%; transform: translateY(-56%); color: var(--text-muted); pointer-events: none; }
 
-        /* Folder Tabs */
-        .folder-tabs { display: flex; padding: 0 8px; border-bottom: 1px solid var(--border); gap: 2px; overflow-x: auto; }
-        .folder-tab { flex: 1; text-align: center; padding: 9px 6px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; position: relative; white-space: nowrap; transition: color 0.15s; user-select: none; }
-        .folder-tab:hover { color: #d5e2ee; }
-        .folder-tab.active { color: var(--accent-bright); }
-        .folder-tab.active::after { content: ""; position: absolute; bottom: 0; left: 16%; right: 16%; height: 3px; background: var(--accent-bright); border-radius: 3px 3px 0 0; }
+        .tab-view { flex: 1; overflow-y: auto; padding-bottom: 92px; display: none; }
+        .tab-view.active { display: block; }
 
-        .chat-list { flex: 1; overflow-y: auto; padding: 6px 6px 80px; }
-        .chat-item { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 10px; cursor: pointer; transition: background 0.15s; margin-bottom: 2px; }
+        .chat-item { display: flex; align-items: center; gap: 13px; padding: 10px 14px; cursor: pointer; }
         .chat-item:hover { background: var(--bg-hover); }
-        .chat-item.active { background: var(--bg-active); }
-        .chat-item.active .chat-preview, .chat-item.active .chat-time { color: #d6e6f5; }
-
-        .avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 600; font-size: 18px; flex-shrink: 0; text-transform: uppercase; color: #fff; user-select: none; box-shadow: inset 0 -2px 6px rgba(0,0,0,0.18); }
+        .chat-item.active { background: var(--accent-soft); }
+        .avatar { width: 52px; height: 52px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 19px; flex-shrink: 0; text-transform: uppercase; color: #fff; user-select: none; }
         .avatar-sm { width: 40px; height: 40px; font-size: 16px; }
-        .avatar-lg { width: 76px; height: 76px; font-size: 30px; }
-
+        .avatar-xl { width: 92px; height: 92px; font-size: 36px; position: relative; }
         .chat-info { flex: 1; min-width: 0; }
-        .chat-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-        .chat-name-wrap { display: flex; align-items: center; gap: 5px; min-width: 0; }
-        .chat-name { font-weight: 600; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .chat-type-icon { color: var(--accent-bright); flex-shrink: 0; }
-        .chat-item.active .chat-type-icon { color: #fff; }
-        .chat-time { font-size: 11.5px; color: var(--text-muted); flex-shrink: 0; }
+        .chat-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .chat-name { font-weight: 600; font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-time-wrap { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+        .tick-green { color: var(--accent); font-weight: bold; }
+        .chat-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+        .chat-preview { font-size: 14px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .unread-badge { background: var(--bg-elevated); color: var(--text-main); font-size: 11.5px; font-weight: 700; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .section-label { padding: 8px 16px 4px; font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; }
 
-        .chat-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 3px; }
-        .chat-preview { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .unread-badge { background: var(--accent-bright); color: #0e1621; font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .fab-group { position: absolute; bottom: 86px; right: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 15; }
+        .fab-main { width: 54px; height: 54px; border-radius: 50%; background: var(--accent); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
 
-        .section-label { padding: 8px 12px 4px; font-size: 12px; font-weight: 600; color: var(--accent-bright); letter-spacing: 0.3px; }
+        .settings-hero { display: flex; flex-direction: column; align-items: center; padding: 24px 16px 18px; text-align: center; }
+        .cam-badge { position: absolute; bottom: 0; right: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; border: 3px solid var(--bg-sidebar); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .hero-name { font-size: 21px; font-weight: 700; margin-top: 12px; }
+        .hero-sub { font-size: 13.5px; color: var(--text-muted); margin-top: 3px; }
+        .hero-bio { font-size: 13px; color: var(--text-main); opacity: 0.85; margin-top: 6px; max-width: 260px; }
 
-        /* FAB */
-        .fab { position: absolute; bottom: 20px; right: 20px; width: 54px; height: 54px; border-radius: 50%; background: var(--accent); color: #fff; border: none; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; transition: transform 0.2s, background 0.2s; }
-        .fab:hover { background: #5e97d1; transform: scale(1.06); }
-        .fab:active { transform: scale(0.96); }
+        .settings-card { background: var(--bg-card); margin: 0 14px 14px; border-radius: 18px; overflow: hidden; }
+        .settings-row { display: flex; align-items: center; gap: 14px; padding: 13px 16px; cursor: pointer; border-bottom: 1px solid var(--border); }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-row:hover { background: var(--bg-hover); }
+        .s-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+        .s-text h4 { font-size: 15px; font-weight: 600; }
+        .s-text p { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
 
-        /* --- SLIDE-OUT DRAWER --- */
-        .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 30; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
-        .backdrop.open { opacity: 1; pointer-events: auto; }
+        .bottom-nav { position: absolute; bottom: 12px; left: 12px; right: 12px; height: 64px; background: var(--nav-bg); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 32px; display: flex; align-items: center; justify-content: space-around; padding: 0 6px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        .nav-item { flex: 1; height: 52px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: var(--text-muted); font-size: 11px; font-weight: 600; position: relative; user-select: none; }
+        .nav-item.active { background: var(--accent-soft); color: var(--accent); }
+        .nav-badge { position: absolute; top: 4px; right: calc(50% - 20px); background: var(--accent); color: #111; font-size: 10px; font-weight: 800; min-width: 17px; height: 17px; border-radius: 9px; padding: 0 4px; display: none; align-items: center; justify-content: center; }
+        .nav-avatar { width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
 
-        .drawer { position: fixed; top: 0; left: -300px; width: 285px; height: 100%; background: var(--bg-sidebar); z-index: 31; transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; flex-direction: column; box-shadow: 6px 0 24px rgba(0,0,0,0.55); }
-        .drawer.open { left: 0; }
-        .drawer-header { padding: 26px 20px 18px; background: linear-gradient(135deg, #1d2d3e 0%, #16212c 100%); border-bottom: 1px solid var(--border); }
-        .drawer-user { margin-top: 14px; font-size: 16.5px; font-weight: 600; }
-        .drawer-handle { font-size: 13px; color: var(--accent-bright); margin-top: 2px; }
-        .drawer-items { padding: 10px 8px; flex: 1; }
-        .drawer-item { display: flex; align-items: center; gap: 16px; padding: 12px 14px; border-radius: 10px; cursor: pointer; font-size: 14.5px; font-weight: 500; color: var(--text-main); transition: background 0.15s; }
-        .drawer-item:hover { background: var(--bg-hover); }
-        .drawer-item svg { color: var(--text-muted); }
-        .drawer-item.danger { color: var(--danger); }
-        .drawer-item.danger svg { color: var(--danger); }
-        .drawer-footer { padding: 14px 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
-
-        /* --- CHAT PANEL --- */
-        .chat-panel {
-            flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; min-width: 0;
-            background-color: var(--bg-main);
-            background-image:
-                radial-gradient(circle at 20% 20%, rgba(82, 136, 193, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 80% 80%, rgba(106, 178, 242, 0.06) 0%, transparent 45%),
-                radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 26px 26px;
-        }
-
-        .chat-header { background: var(--bg-sidebar); padding: 8px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); min-height: 58px; z-index: 5; }
-        .chat-header-clickable { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; padding: 3px 6px; border-radius: 8px; transition: background 0.15s; }
-        .chat-header-clickable:hover { background: var(--bg-hover); }
+        .chat-panel { flex: 1; display: flex; flex-direction: column; height: 100%; background: var(--bg-main); position: relative; min-width: 0; }
+        .chat-header { background: var(--bg-sidebar); padding: 10px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); min-height: 60px; }
         .back-btn { display: none; }
         .chat-header-info { flex: 1; min-width: 0; }
-        .chat-header-info h3 { font-size: 15.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .chat-header-info span { font-size: 12.5px; color: var(--text-muted); display: block; margin-top: 1px; }
+        .chat-header-info h3 { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-header-info span { font-size: 12.5px; color: var(--text-muted); }
+        .chat-header-info span.online { color: var(--accent); font-weight: 600; }
 
-        #messages { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 4px; }
-        .empty-state { margin: auto; background: rgba(23, 33, 43, 0.88); backdrop-filter: blur(8px); color: #d0dce8; font-size: 14px; padding: 10px 20px; border-radius: 22px; text-align: center; border: 1px solid rgba(255,255,255,0.06); }
-        .date-pill { align-self: center; background: rgba(23, 33, 43, 0.82); color: #b5c6d6; font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 14px; margin: 6px 0 10px; }
-
-        /* Bubbles */
-        @keyframes msgPop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .msg { position: relative; max-width: 68%; padding: 7px 11px 6px 12px; border-radius: 14px; font-size: 14.5px; line-height: 1.42; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.28); animation: msgPop 0.16s ease-out; margin-top: 6px; }
-        .msg.grouped { margin-top: 1px; }
+        #messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
+        .empty-state { margin: auto; background: var(--bg-card); color: var(--text-muted); font-size: 14px; padding: 10px 20px; border-radius: 20px; text-align: center; }
+        .msg { max-width: 72%; padding: 8px 12px 6px; border-radius: 16px; font-size: var(--msg-font-size); line-height: 1.4; word-wrap: break-word; }
         .msg.me { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 4px; }
         .msg.other { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 4px; }
-        .msg-user { font-size: 12.5px; font-weight: 600; margin-bottom: 2px; }
-        .msg-body { display: inline; white-space: pre-wrap; }
-        .msg-meta { float: right; margin-left: 10px; margin-top: 6px; font-size: 11px; color: rgba(255,255,255,0.52); display: inline-flex; align-items: center; gap: 3px; user-select: none; }
-        .msg.me .msg-meta { color: #8ec5f5; }
+        .msg-user { font-size: 12.5px; font-weight: 600; color: var(--accent); margin-bottom: 2px; }
+        .msg-meta { float: right; margin-left: 10px; margin-top: 5px; font-size: 11px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 3px; }
 
-        /* Floating Emoji Popover */
-        .emoji-popover { position: absolute; bottom: 68px; left: 16px; width: 300px; max-width: calc(100% - 32px); background: var(--bg-elevated); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.5); display: none; grid-template-columns: repeat(7, 1fr); gap: 6px; z-index: 15; }
-        .emoji-popover.open { display: grid; }
-        .emoji-popover span { font-size: 22px; text-align: center; padding: 5px 0; border-radius: 8px; cursor: pointer; transition: background 0.12s, transform 0.12s; user-select: none; }
-        .emoji-popover span:hover { background: var(--bg-hover); transform: scale(1.18); }
+        .input-area { background: var(--bg-sidebar); padding: 10px 12px; display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--border); }
+        #msgInput { flex: 1; background: var(--bg-input); border: none; color: var(--text-main); padding: 11px 16px; border-radius: 24px; font-size: 15px; outline: none; }
+        #sendBtn { background: var(--accent); color: #fff; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .readonly-bar { width: 100%; text-align: center; color: var(--text-muted); font-size: 13.5px; padding: 8px; }
 
-        /* Input Area */
-        .input-area { background: var(--bg-sidebar); padding: 8px 14px; display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--border); min-height: 58px; }
-        #msgInput { flex: 1; background: var(--bg-input); border: 1.5px solid transparent; color: #fff; padding: 10px 16px; border-radius: 22px; font-size: 14.5px; outline: none; transition: border-color 0.2s; }
-        #msgInput:focus { border-color: var(--accent); }
-        #msgInput::placeholder { color: var(--text-muted); }
-        #sendBtn { background: var(--accent); color: #fff; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.15s; flex-shrink: 0; }
-        #sendBtn:hover { background: #5e97d1; }
-        #sendBtn:active { transform: scale(0.92); }
-        .readonly-bar { width: 100%; text-align: center; color: var(--text-muted); font-size: 13.5px; padding: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-        /* --- RIGHT INFO PANEL --- */
-        .info-panel { width: 300px; background: var(--bg-sidebar); border-left: 1px solid var(--border); display: none; flex-direction: column; height: 100%; flex-shrink: 0; }
-        .info-panel.open { display: flex; }
-        .info-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); min-height: 58px; }
-        .info-header h3 { font-size: 15.5px; font-weight: 600; }
-        .info-body { padding: 24px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
-        .info-title { font-size: 18px; font-weight: 600; margin-top: 4px; }
-        .info-sub { font-size: 13px; color: var(--accent-bright); }
-        .info-card { width: 100%; background: var(--bg-input); border-radius: 12px; padding: 12px 14px; text-align: left; margin-top: 12px; font-size: 13.5px; color: #d0dce8; line-height: 1.5; }
-        .info-card small { display: block; color: var(--text-muted); font-size: 11.5px; margin-bottom: 2px; }
-
-        /* --- MODALS --- */
-        .overlay { position: fixed; inset: 0; background: rgba(11, 16, 23, 0.88); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 40; }
-        .modal-box { background: var(--bg-sidebar); padding: 28px 24px; border-radius: 16px; width: 90%; max-width: 360px; text-align: center; box-shadow: 0 14px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.06); }
-        .logo-circle { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #6ab2f2, #3a7bd5); margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 6px 18px rgba(82, 136, 193, 0.4); }
-        .modal-box h2 { margin-bottom: 14px; color: #fff; font-size: 20px; font-weight: 600; }
-        .modal-box input { width: 100%; padding: 12px 14px; margin-bottom: 12px; border-radius: 10px; border: 1.5px solid #2b3a4a; background: var(--bg-input); color: #fff; font-size: 14.5px; outline: none; transition: 0.2s; }
-        .modal-box input:focus { border-color: var(--accent-bright); }
-        .primary-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-        .primary-btn:hover { background: #5e97d1; }
-        .cancel-btn { background: var(--bg-input); color: #ccc; margin-top: 8px; }
-        .cancel-btn:hover { background: #2d3b4c; }
+        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 60; }
+        .modal-box { background: var(--bg-sidebar); padding: 24px; border-radius: 18px; width: 92%; max-width: 370px; text-align: center; border: 1px solid var(--border); max-height: 85vh; overflow-y: auto; }
+        .logo-circle { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; color: #fff; }
+        .modal-box h2 { margin-bottom: 12px; font-size: 19px; }
+        .modal-box input, .modal-box textarea { width: 100%; padding: 11px 14px; margin-bottom: 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-main); font-size: 14px; outline: none; }
+        .primary-btn { width: 100%; padding: 11px; border-radius: 12px; border: none; background: var(--accent); color: #fff; font-size: 14.5px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+        .primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cancel-btn { background: var(--bg-input); color: var(--text-main); margin-top: 8px; }
         .toggle-text { margin-top: 16px; font-size: 13.5px; color: var(--text-muted); cursor: pointer; }
-        .toggle-text span { color: var(--accent-bright); font-weight: 600; }
+        .toggle-text span { color: var(--accent); font-weight: 600; }
         .err-text { color: var(--danger); font-size: 13px; margin-bottom: 10px; min-height: 18px; }
+        .info-text { color: var(--accent); font-size: 12.5px; margin-bottom: 10px; }
+        .username-status { text-align: left; font-size: 12px; margin: -6px 0 10px 4px; min-height: 16px; }
 
-        /* Toast */
-        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #243447; color: #fff; padding: 10px 18px; border-radius: 22px; font-size: 13.5px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); opacity: 0; pointer-events: none; transition: 0.25s; z-index: 60; }
+        .setting-opt { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--border); text-align: left; font-size: 14.5px; }
+        .setting-opt:last-of-type { border-bottom: none; }
+        .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background: #444; border-radius: 24px; transition: 0.2s; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+        input:checked + .slider { background: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .color-dots { display: flex; gap: 10px; justify-content: center; margin: 10px 0 14px; }
+        .color-dot { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
+        .size-pills { display: flex; gap: 8px; margin: 10px 0 14px; }
+        .size-pill { flex: 1; padding: 8px; border-radius: 10px; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border); cursor: pointer; font-size: 13px; font-weight: 600; }
+        .size-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        .stat-box { background: var(--bg-input); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 14px; }
+        .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(15px); background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border); padding: 10px 18px; border-radius: 22px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: 0.22s; z-index: 70; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        /* Mobile Responsive */
-        @media (max-width: 900px) {
-            .info-panel { position: fixed; right: 0; top: 0; z-index: 25; box-shadow: -6px 0 24px rgba(0,0,0,0.5); }
-        }
         @media (max-width: 768px) {
-            .sidebar { width: 100%; }
+            .sidebar { width: 100%; border-right: none; }
             .chat-panel { display: none; width: 100%; }
             body.chat-open .sidebar { display: none; }
             body.chat-open .chat-panel { display: flex; }
             .back-btn { display: inline-flex; }
-            #messages { padding: 12px 14px; }
             .msg { max-width: 82%; }
         }
     </style>
 </head>
 <body>
 
-<!-- Auth Overlay -->
+<!-- PHASE 2: AUTH MODAL (LOGIN + EMAIL OTP SIGNUP + LIVE USERNAME CHECK) -->
 <div id="authOverlay" class="overlay">
     <div class="modal-box">
-        <div class="logo-circle">
-            <svg width="32" height="32" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </div>
+        <div class="logo-circle"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
         <h2 id="authTitle">Helligram</h2>
         <div id="authError" class="err-text"></div>
-        <input type="text" id="usernameInput" placeholder="Username" maxlength="20">
-        <input type="password" id="passwordInput" placeholder="Password" onkeypress="if(event.key==='Enter') submitAuth()">
-        <button id="authBtn" class="primary-btn" onclick="submitAuth()">Sign In</button>
-        <div class="toggle-text" onclick="toggleMode()">
-            <span id="toggleLabel">Naya account banana hai? Sign Up</span>
+        <div id="authInfo" class="info-text" style="display:none;"></div>
+
+        <!-- Login Form -->
+        <div id="loginForm">
+            <input type="text" id="loginIdentifier" placeholder="Username ya Email">
+            <input type="password" id="loginPassword" placeholder="Password" onkeypress="if(event.key==='Enter') submitLogin()">
+            <button class="primary-btn" onclick="submitLogin()">Sign In</button>
+            <div class="toggle-text" onclick="showSignupStep1()"><span>Naya account banana hai? Sign Up</span></div>
+        </div>
+
+        <!-- Signup Step 1: Enter Email -->
+        <div id="signupStep1" style="display:none;">
+            <input type="email" id="signupEmail" placeholder="Apna Email address likhein..." onkeypress="if(event.key==='Enter') sendOtp()">
+            <button class="primary-btn" id="sendOtpBtn" onclick="sendOtp()">Send Verification Code</button>
+            <div class="toggle-text" onclick="showLogin()"><span>Pehle se account hai? Sign In</span></div>
+        </div>
+
+        <!-- Signup Step 2: Verify Code + Set Username & Password -->
+        <div id="signupStep2" style="display:none;">
+            <input type="text" id="signupCode" placeholder="6-Digit Email Code" maxlength="6">
+            <input type="text" id="signupUsername" placeholder="Username choose karein (e.g. ali_khan)" maxlength="20" oninput="checkUsernameLive()">
+            <div id="usernameStatus" class="username-status"></div>
+            <input type="password" id="signupPassword" placeholder="Naya Password set karein" onkeypress="if(event.key==='Enter') completeSignup()">
+            <button class="primary-btn" id="completeSignupBtn" onclick="completeSignup()">Create Account</button>
+            <div class="toggle-text" onclick="showSignupStep1()"><span>← Email tabdeel karein</span></div>
         </div>
     </div>
 </div>
@@ -217,235 +215,445 @@
         <h2 id="createModalTitle">New Group</h2>
         <input type="text" id="newRoomName" placeholder="Naam likhein..." onkeypress="if(event.key==='Enter') confirmCreateRoom()">
         <button class="primary-btn" onclick="confirmCreateRoom()">Create</button>
-        <button class="primary-btn cancel-btn" onclick="closeCreateModal()">Cancel</button>
+        <button class="primary-btn cancel-btn" onclick="closeModal('createModal')">Cancel</button>
     </div>
 </div>
 
-<!-- Slide-out Drawer -->
-<div class="backdrop" id="drawerBackdrop" onclick="toggleDrawer(false)"></div>
-<div class="drawer" id="drawer">
-    <div class="drawer-header">
-        <div class="avatar" id="drawerAvatar">H</div>
-        <div class="drawer-user" id="drawerName">User</div>
-        <div class="drawer-handle" id="drawerHandle">@user</div>
+<!-- SETTINGS MODALS -->
+<div id="modal-account" class="overlay" style="display: none;">
+    <div class="modal-box">
+        <h2>Edit Account</h2>
+        <input type="text" id="editDisplayName" placeholder="Display Name" maxlength="30">
+        <textarea id="editBio" rows="3" placeholder="Bio likhein..." maxlength="120"></textarea>
+        <button class="primary-btn" onclick="saveAccount()">Save Changes</button>
+        <button class="primary-btn cancel-btn" onclick="closeModal('modal-account')">Close</button>
     </div>
-    <div class="drawer-items">
-        <div class="drawer-item" onclick="toggleDrawer(false); openCreateModal('group')">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            New Group
-        </div>
-        <div class="drawer-item" onclick="toggleDrawer(false); openCreateModal('channel')">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.33-.58-2.53-1.5-3.35v6.69c.92-.81 1.5-2.01 1.5-3.34z"/></svg>
-            New Channel
-        </div>
-        <div class="drawer-item danger" onclick="logout()">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-            Log Out
-        </div>
-    </div>
-    <div class="drawer-footer">Helligram Web • v2.5</div>
 </div>
+
+<div id="modal-chatsettings" class="overlay" style="display: none;">
+    <div class="modal-box">
+        <h2>Chat Settings</h2>
+        <div class="setting-opt">
+            <span>Day Mode</span>
+            <label class="switch"><input type="checkbox" id="toggleDayMode" onchange="toggleTheme(this.checked)"><span class="slider"></span></label>
+        </div>
+        <div style="text-align:left; font-size:13px; color:var(--text-muted); margin-top:12px;">Accent Color</div>
+        <div class="color-dots">
+            <div class="color-dot" style="background:#7cb342;" onclick="setAccent('#7cb342')"></div>
+            <div class="color-dot" style="background:#42a5f5;" onclick="setAccent('#42a5f5')"></div>
+            <div class="color-dot" style="background:#ab47bc;" onclick="setAccent('#ab47bc')"></div>
+            <div class="color-dot" style="background:#ff9800;" onclick="setAccent('#ff9800')"></div>
+        </div>
+        <div style="text-align:left; font-size:13px; color:var(--text-muted);">Message Text Size</div>
+        <div class="size-pills">
+            <button class="size-pill" id="sz-13px" onclick="setTextSize('13px')">Small</button>
+            <button class="size-pill" id="sz-14.5px" onclick="setTextSize('14.5px')">Medium</button>
+            <button class="size-pill" id="sz-17px" onclick="setTextSize('17px')">Large</button>
+        </div>
+        <button class="primary-btn cancel-btn" onclick="closeModal('modal-chatsettings')">Done</button>
+    </div>
+</div>
+
+<div id="modal-privacy" class="overlay" style="display: none;">
+    <div class="modal-box">
+        <h2>Privacy & Security</h2>
+        <div class="setting-opt">
+            <span>Show Online / Last Seen</span>
+            <label class="switch"><input type="checkbox" id="toggleLastSeen" onchange="savePrivacy()"><span class="slider"></span></label>
+        </div>
+        <div style="text-align:left; font-size:13px; color:var(--text-muted); margin:14px 0 8px;">Change Password</div>
+        <input type="password" id="oldPassInput" placeholder="Purana Password">
+        <input type="password" id="newPassInput" placeholder="Naya Password">
+        <button class="primary-btn" onclick="changePassword()">Update Password</button>
+        <button class="primary-btn cancel-btn" onclick="closeModal('modal-privacy')">Close</button>
+    </div>
+</div>
+
+<div id="modal-notifications" class="overlay" style="display: none;">
+    <div class="modal-box">
+        <h2>Notifications</h2>
+        <div class="setting-opt"><span>Message Sound</span><label class="switch"><input type="checkbox" id="notifSound" onchange="saveNotifPrefs()"><span class="slider"></span></label></div>
+        <div class="setting-opt"><span>Browser Popup Alerts</span><label class="switch"><input type="checkbox" id="notifBrowser" onchange="toggleBrowserNotif(this.checked)"><span class="slider"></span></label></div>
+        <div class="setting-opt"><span>Show Unread Badges</span><label class="switch"><input type="checkbox" id="notifBadges" onchange="saveNotifPrefs()"><span class="slider"></span></label></div>
+        <button class="primary-btn" onclick="playNotifSound(); showToast('Test sound played!')">Test Sound</button>
+        <button class="primary-btn cancel-btn" onclick="closeModal('modal-notifications')">Done</button>
+    </div>
+</div>
+
+<div id="modal-storage" class="overlay" style="display: none;">
+    <div class="modal-box">
+        <h2>Data & Storage</h2>
+        <div class="stat-box"><span>Total Chats</span><strong id="statChats">-</strong></div>
+        <div class="stat-box"><span>Saved Messages</span><strong id="statMsgs">-</strong></div>
+        <div class="stat-box"><span>Database Size</span><strong id="statSize">-</strong></div>
+        <button class="primary-btn" style="background:var(--danger);" onclick="clearLocalCache()">Clear Local Cache</button>
+        <button class="primary-btn cancel-btn" onclick="closeModal('modal-storage')">Close</button>
+    </div>
+</div>
+
+<div class="dropdown-backdrop" id="dropBackdrop" onclick="toggleMenu(false)"></div>
 
 <!-- Left Sidebar -->
 <div class="sidebar">
-    <div class="sidebar-top">
-        <button class="icon-circle-btn" onclick="toggleDrawer(true)" title="Menu">
-            <svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+    <div class="app-header" id="mainHeader">
+        <div class="app-title" id="headerTitle">Helligram</div>
+        <button class="icon-btn" onclick="toggleMenu()">
+            <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
         </button>
-        <div class="search-wrap">
-            <span class="search-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            </span>
-            <input type="text" id="searchInput" placeholder="Search" oninput="handleSearch()">
-        </div>
-    </div>
 
-    <div class="folder-tabs">
-        <div class="folder-tab active" onclick="setFolder('all', this)">All</div>
-        <div class="folder-tab" onclick="setFolder('dm', this)">Private</div>
-        <div class="folder-tab" onclick="setFolder('group', this)">Groups</div>
-        <div class="folder-tab" onclick="setFolder('channel', this)">Channels</div>
-    </div>
-
-    <div class="chat-list" id="chatList"></div>
-
-    <button class="fab" title="New Group" onclick="openCreateModal('group')">
-        <svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-    </button>
-</div>
-
-<!-- Center Chat Panel -->
-<div class="chat-panel">
-    <div class="chat-header" id="chatHeader" style="display: none;">
-        <button class="icon-circle-btn back-btn" onclick="closeMobileChat()">
-            <svg width="22" height="22" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        </button>
-        <div class="chat-header-clickable" onclick="toggleInfoPanel()">
-            <div class="avatar avatar-sm" id="activeRoomAvatar">H</div>
-            <div class="chat-header-info">
-                <h3 id="activeRoomName">Chat</h3>
-                <span id="activeRoomMeta"></span>
+        <div class="dropdown-menu" id="dropdownMenu">
+            <div class="drop-item" onclick="toggleTheme()">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+                <span id="themeLabel">Day Mode</span>
+            </div>
+            <div class="drop-divider"></div>
+            <div class="drop-item" onclick="toggleMenu(false); openCreateModal('group')">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                <span>New Group</span>
+            </div>
+            <div class="drop-item" onclick="toggleMenu(false); openCreateModal('channel')">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4z"/></svg>
+                <span>New Channel</span>
+            </div>
+            <div class="drop-item" onclick="toggleMenu(false); openSavedMessages()">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                <span>Saved Messages</span>
+            </div>
+            <div class="drop-divider"></div>
+            <div class="drop-item" onclick="toggleMenu(false); showToast('Server: ' + document.getElementById('proxyStatus').innerText)">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                <div><div>Proxy</div><div class="drop-sub" id="proxyStatus">Connected</div></div>
             </div>
         </div>
-        <button class="icon-circle-btn" onclick="toggleInfoPanel()" title="Chat Info">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-        </button>
     </div>
 
-    <div id="messages">
-        <div class="empty-state">Select a chat to start messaging</div>
+    <div class="search-wrap" id="searchBox">
+        <span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span>
+        <input type="text" id="searchInput" placeholder="Search Chats or @username" oninput="handleSearch()">
     </div>
 
-    <div class="emoji-popover" id="emojiPopover">
-        <span onclick="addEmoji('😀')">😀</span><span onclick="addEmoji('😂')">😂</span><span onclick="addEmoji('🤣')">🤣</span>
-        <span onclick="addEmoji('😍')">😍</span><span onclick="addEmoji('😎')">😎</span><span onclick="addEmoji('🤔')">🤔</span>
-        <span onclick="addEmoji('😭')">😭</span><span onclick="addEmoji('😡')">😡</span><span onclick="addEmoji('🔥')">🔥</span>
-        <span onclick="addEmoji('❤️')">❤️</span><span onclick="addEmoji('👍')">👍</span><span onclick="addEmoji('👎')">👎</span>
-        <span onclick="addEmoji('🙏')">🙏</span><span onclick="addEmoji('🤝')">🤝</span><span onclick="addEmoji('🎉')">🎉</span>
-        <span onclick="addEmoji('💯')">💯</span><span onclick="addEmoji('🚀')">🚀</span><span onclick="addEmoji('⚡')">⚡</span>
-        <span onclick="addEmoji('✨')">✨</span><span onclick="addEmoji('👀')">👀</span><span onclick="addEmoji('🫡')">🫡</span>
+    <div class="tab-view active" id="view-chats"><div id="chatList"></div></div>
+    <div class="tab-view" id="view-contacts"><div class="section-label">Your Contacts</div><div id="contactsList"></div></div>
+
+    <div class="tab-view" id="view-settings">
+        <div class="settings-hero">
+            <div class="avatar avatar-xl" id="settingsAvatar">H
+                <div class="cam-badge" onclick="openAccountModal()"><svg width="15" height="15" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></div>
+            </div>
+            <div class="hero-name" id="settingsName">User</div>
+            <div class="hero-sub" id="settingsHandle">@user</div>
+            <div class="hero-bio" id="settingsBio"></div>
+        </div>
+        <div class="settings-card">
+            <div class="settings-row" onclick="openAccountModal()"><div class="s-icon" style="background:#2196f3;"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><div class="s-text"><h4>Account</h4><p>Display Name, Username, Bio</p></div></div>
+            <div class="settings-row" onclick="openChatSettingsModal()"><div class="s-icon" style="background:#ff9800;"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div><div class="s-text"><h4>Chat Settings</h4><p>Theme, Accent Color, Text Size</p></div></div>
+            <div class="settings-row" onclick="openPrivacyModal()"><div class="s-icon" style="background:#4caf50;"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12.65 10A5.99 5.99 0 0 0 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6a5.99 5.99 0 0 0 5.65-4H17v4h4v-4h2v-4H12.65z"/></svg></div><div class="s-text"><h4>Privacy & Security</h4><p>Online Status, Change Password</p></div></div>
+            <div class="settings-row" onclick="openNotifModal()"><div class="s-icon" style="background:#f44336;"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></div><div class="s-text"><h4>Notifications</h4><p>Sounds, Alerts, Badges</p></div></div>
+            <div class="settings-row" onclick="openStorageModal()"><div class="s-icon" style="background:#3f51b5;"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg></div><div class="s-text"><h4>Data and Storage</h4><p>Usage stats, Clear Cache</p></div></div>
+            <div class="settings-row" onclick="logout()"><div class="s-icon" style="background:#e53935;"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg></div><div class="s-text"><h4 style="color:var(--danger);">Log Out</h4><p>Sign out of Helligram</p></div></div>
+        </div>
     </div>
 
-    <div class="input-area" id="inputArea" style="display: none;"></div>
+    <div class="tab-view" id="view-profile">
+        <div class="settings-hero">
+            <div class="avatar avatar-xl" id="profileAvatar">H</div>
+            <div class="hero-name" id="profileName">User</div>
+            <div class="hero-sub" id="profileHandle">@user</div>
+            <div class="hero-bio" id="profileBio"></div>
+        </div>
+        <div class="settings-card">
+            <div class="settings-row" onclick="openAccountModal()"><div class="s-icon" style="background:#2196f3;"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg></div><div class="s-text"><h4>Edit Profile</h4><p>Change display name & bio</p></div></div>
+            <div class="settings-row" onclick="openSavedMessages()"><div class="s-icon" style="background:var(--accent);"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg></div><div class="s-text"><h4>Saved Messages</h4><p>Your personal cloud notes</p></div></div>
+        </div>
+    </div>
+
+    <div class="fab-group" id="fabGroup">
+        <button class="fab-main" onclick="openCreateModal('group')" title="New Group"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-chats" onclick="switchTab('chats')"><span class="nav-badge" id="totalUnreadBadge">0</span><svg width="22" height="22" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg><span>Chats</span></div>
+        <div class="nav-item" id="nav-contacts" onclick="switchTab('contacts')"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg><span>Contacts</span></div>
+        <div class="nav-item" id="nav-settings" onclick="switchTab('settings')"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>Settings</span></div>
+        <div class="nav-item" id="nav-profile" onclick="switchTab('profile')"><div class="nav-avatar" id="navProfileAvatar">H</div><span>Profile</span></div>
+    </div>
 </div>
 
-<!-- Right Info Panel -->
-<div class="info-panel" id="infoPanel">
-    <div class="info-header">
-        <h3>Chat Info</h3>
-        <button class="icon-circle-btn" onclick="toggleInfoPanel(false)">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
+<!-- Right Chat Panel -->
+<div class="chat-panel">
+    <div class="chat-header" id="chatHeader" style="display: none;">
+        <button class="icon-btn back-btn" onclick="closeMobileChat()"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+        <div class="avatar avatar-sm" id="activeRoomAvatar">H</div>
+        <div class="chat-header-info"><h3 id="activeRoomName">Chat</h3><span id="activeRoomMeta"></span></div>
     </div>
-    <div class="info-body">
-        <div class="avatar avatar-lg" id="infoAvatar">H</div>
-        <div class="info-title" id="infoName">Name</div>
-        <div class="info-sub" id="infoSub">Details</div>
-        <div class="info-card">
-            <small>Type</small>
-            <div id="infoType">-</div>
-        </div>
-        <div class="info-card">
-            <small>Admin / Creator</small>
-            <div id="infoOwner">-</div>
-        </div>
-    </div>
+    <div id="messages"><div class="empty-state">Select a chat to start messaging</div></div>
+    <div class="input-area" id="inputArea" style="display: none;"></div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
     let ws;
-    let isSignup = false;
     let myName = localStorage.getItem("hg_username") || "";
     let myToken = localStorage.getItem("hg_token") || "";
+    let myProfile = { display_name: myName, bio: "", show_last_seen: true };
     let rooms = [];
     let activeRoom = null;
-    let currentFolder = "all";
     let createRoomType = "group";
     let unreadCounts = {};
-    let lastSenderInChat = null;
+    let usernameCheckTimer = null;
+    let isUsernameAvailable = false;
 
-    const avatarColors = [
-        "linear-gradient(135deg, #ff885e, #e15241)",
-        "linear-gradient(135deg, #ffcd6a, #f2994a)",
-        "linear-gradient(135deg, #b694f9, #825ee4)",
-        "linear-gradient(135deg, #9ad164, #5cb85c)",
-        "linear-gradient(135deg, #64d2d6, #32a8b8)",
-        "linear-gradient(135deg, #6ab2f2, #3a7bd5)",
-        "linear-gradient(135deg, #f783ac, #d6336c)"
-    ];
+    let prefs = JSON.parse(localStorage.getItem("hg_prefs") || '{"sound":true,"browser":false,"badges":true,"accent":"#7cb342","textSize":"14.5px"}');
 
+    const avatarColors = ["#4caf50", "#e57373", "#64b5f6", "#ba68c8", "#ffb74d", "#4db6ac", "#f06292"];
     function getAvatarBg(name) {
         let hash = 0;
         for (let i = 0; i < (name || "").length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
         return avatarColors[Math.abs(hash) % avatarColors.length];
     }
 
-    function getNameColor(name) {
-        const solid = ["#ff885e", "#ffcd6a", "#b694f9", "#9ad164", "#64d2d6", "#6ab2f2", "#f783ac"];
-        let hash = 0;
-        for (let i = 0; i < (name || "").length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        return solid[Math.abs(hash) % solid.length];
-    }
+    function escapeHtml(text) { const d = document.createElement("div"); d.innerText = text || ""; return d.innerHTML; }
+    function showToast(msg) { const t = document.getElementById("toast"); t.innerText = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2500); }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
 
-    function escapeHtml(text) {
-        const div = document.createElement("div");
-        div.innerText = text || "";
-        return div.innerHTML;
-    }
-
-    function showToast(msg) {
-        const t = document.getElementById("toast");
-        t.innerText = msg;
-        t.classList.add("show");
-        setTimeout(() => t.classList.remove("show"), 2500);
-    }
-
-    function toggleDrawer(open) {
-        document.getElementById("drawer").classList.toggle("open", open);
-        document.getElementById("drawerBackdrop").classList.toggle("open", open);
-    }
-
-    function toggleInfoPanel(force) {
-        if (!activeRoom) return;
-        const panel = document.getElementById("infoPanel");
-        const shouldOpen = force !== undefined ? force : !panel.classList.contains("open");
-        if (shouldOpen) {
-            const av = document.getElementById("infoAvatar");
-            av.innerText = activeRoom.name[0];
-            av.style.background = getAvatarBg(activeRoom.name);
-            document.getElementById("infoName").innerText = activeRoom.name;
-            document.getElementById("infoSub").innerText =
-                activeRoom.type === "dm" ? "Private Chat" : `${activeRoom.members} ${activeRoom.type === 'channel' ? 'subscribers' : 'members'}`;
-            document.getElementById("infoType").innerText = activeRoom.type.toUpperCase();
-            document.getElementById("infoOwner").innerText = "@" + activeRoom.owner;
+    function applyPrefs() {
+        document.documentElement.style.setProperty("--accent", prefs.accent);
+        document.documentElement.style.setProperty("--msg-font-size", prefs.textSize);
+        if (localStorage.getItem("hg_theme") === "day") {
+            document.body.classList.add("day-mode");
+            document.getElementById("themeLabel").innerText = "Night Mode";
         }
-        panel.classList.toggle("open", shouldOpen);
+    }
+    applyPrefs();
+
+    function playNotifSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.type = "sine"; osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.12, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+            osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.18);
+        } catch (e) {}
     }
 
-    function setFolder(folder, el) {
-        currentFolder = folder;
-        document.querySelectorAll(".folder-tab").forEach(t => t.classList.remove("active"));
-        el.classList.add("active");
-        if (!document.getElementById("searchInput").value.trim()) renderRoomList();
-    }
-
-    function toggleMode() {
-        isSignup = !isSignup;
-        document.getElementById("authTitle").innerText = isSignup ? "Create Account" : "Helligram";
-        document.getElementById("authBtn").innerText = isSignup ? "Sign Up" : "Sign In";
-        document.getElementById("toggleLabel").innerText = isSignup ? "Pehle se account hai? Sign In" : "Naya account banana hai? Sign Up";
+    // --- PHASE 2: AUTH FLOW ---
+    function clearAuthMsgs() {
         document.getElementById("authError").innerText = "";
+        document.getElementById("authInfo").style.display = "none";
+    }
+    function showLogin() {
+        clearAuthMsgs();
+        document.getElementById("authTitle").innerText = "Helligram";
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("signupStep1").style.display = "none";
+        document.getElementById("signupStep2").style.display = "none";
+    }
+    function showSignupStep1() {
+        clearAuthMsgs();
+        document.getElementById("authTitle").innerText = "Create Account";
+        document.getElementById("loginForm").style.display = "none";
+        document.getElementById("signupStep1").style.display = "block";
+        document.getElementById("signupStep2").style.display = "none";
     }
 
-    async function submitAuth() {
-        const username = document.getElementById("usernameInput").value.trim();
-        const password = document.getElementById("passwordInput").value;
-        const errDiv = document.getElementById("authError");
-        errDiv.innerText = "";
-        const res = await fetch(isSignup ? "/api/signup" : "/api/login", {
+    async function sendOtp() {
+        clearAuthMsgs();
+        const email = document.getElementById("signupEmail").value.trim();
+        const btn = document.getElementById("sendOtpBtn");
+        btn.disabled = true; btn.innerText = "Sending...";
+        try {
+            const res = await fetch("/api/auth/send-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (!res.ok) { document.getElementById("authError").innerText = data.detail || "Error"; return; }
+            document.getElementById("authInfo").innerText = data.message;
+            document.getElementById("authInfo").style.display = "block";
+            document.getElementById("signupStep1").style.display = "none";
+            document.getElementById("signupStep2").style.display = "block";
+        } finally {
+            btn.disabled = false; btn.innerText = "Send Verification Code";
+        }
+    }
+
+    function checkUsernameLive() {
+        clearTimeout(usernameCheckTimer);
+        const u = document.getElementById("signupUsername").value.trim();
+        const statusDiv = document.getElementById("usernameStatus");
+        isUsernameAvailable = false;
+        if (!u) { statusDiv.innerText = ""; return; }
+        statusDiv.style.color = "var(--text-muted)";
+        statusDiv.innerText = "Checking...";
+        usernameCheckTimer = setTimeout(async () => {
+            const res = await fetch(`/api/check-username?username=${encodeURIComponent(u)}`);
+            const data = await res.json();
+            isUsernameAvailable = data.available;
+            statusDiv.style.color = data.available ? "var(--accent)" : "var(--danger)";
+            statusDiv.innerText = data.message;
+        }, 350);
+    }
+
+    async function completeSignup() {
+        clearAuthMsgs();
+        const email = document.getElementById("signupEmail").value.trim();
+        const code = document.getElementById("signupCode").value.trim();
+        const username = document.getElementById("signupUsername").value.trim();
+        const password = document.getElementById("signupPassword").value;
+
+        const res = await fetch("/api/auth/complete-signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ email, code, username, password })
         });
         const data = await res.json();
-        if (!res.ok) { errDiv.innerText = data.detail || "Error"; return; }
-        myName = data.username;
-        myToken = data.token;
-        localStorage.setItem("hg_username", myName);
-        localStorage.setItem("hg_token", myToken);
+        if (!res.ok) { document.getElementById("authError").innerText = data.detail || "Error"; return; }
+        myName = data.username; myToken = data.token;
+        localStorage.setItem("hg_username", myName); localStorage.setItem("hg_token", myToken);
         initApp();
+    }
+
+    async function submitLogin() {
+        clearAuthMsgs();
+        const identifier = document.getElementById("loginIdentifier").value.trim();
+        const password = document.getElementById("loginPassword").value;
+        const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ identifier, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { document.getElementById("authError").innerText = data.detail || "Error"; return; }
+        myName = data.username; myToken = data.token;
+        localStorage.setItem("hg_username", myName); localStorage.setItem("hg_token", myToken);
+        initApp();
+    }
+
+    // --- UI & SETTINGS ---
+    function toggleMenu(force) {
+        const menu = document.getElementById("dropdownMenu"), back = document.getElementById("dropBackdrop");
+        const open = force !== undefined ? force : !menu.classList.contains("open");
+        menu.classList.toggle("open", open); back.classList.toggle("open", open);
+    }
+    function toggleTheme(forceDay) {
+        const isDay = forceDay !== undefined ? document.body.classList.toggle("day-mode", forceDay) : document.body.classList.toggle("day-mode");
+        document.getElementById("themeLabel").innerText = isDay ? "Night Mode" : "Day Mode";
+        document.getElementById("toggleDayMode").checked = isDay;
+        localStorage.setItem("hg_theme", isDay ? "day" : "night");
+        toggleMenu(false);
+    }
+    function switchTab(tab) {
+        document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
+        document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+        document.getElementById("view-" + tab).classList.add("active");
+        document.getElementById("nav-" + tab).classList.add("active");
+        const showHeader = tab === "chats" || tab === "contacts";
+        document.getElementById("mainHeader").style.display = showHeader ? "flex" : "none";
+        document.getElementById("searchBox").style.display = showHeader ? "block" : "none";
+        document.getElementById("fabGroup").style.display = tab === "chats" ? "flex" : "none";
+        document.getElementById("headerTitle").innerText = tab === "contacts" ? "Contacts" : "Helligram";
+        if (tab === "contacts") renderContacts();
+    }
+
+    function openAccountModal() {
+        document.getElementById("editDisplayName").value = myProfile.display_name || myName;
+        document.getElementById("editBio").value = myProfile.bio || "";
+        document.getElementById("modal-account").style.display = "flex";
+    }
+    async function saveAccount() {
+        const res = await fetch("/api/me/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-auth-token": myToken },
+            body: JSON.stringify({ display_name: document.getElementById("editDisplayName").value.trim(), bio: document.getElementById("editBio").value.trim() })
+        });
+        if (res.ok) { const d = await res.json(); myProfile.display_name = d.display_name; myProfile.bio = d.bio; renderProfileUI(); closeModal("modal-account"); showToast("Profile updated!"); }
+    }
+    function openChatSettingsModal() {
+        document.getElementById("toggleDayMode").checked = document.body.classList.contains("day-mode");
+        document.querySelectorAll(".size-pill").forEach(p => p.classList.remove("active"));
+        const activeSz = document.getElementById("sz-" + prefs.textSize);
+        if (activeSz) activeSz.classList.add("active");
+        document.getElementById("modal-chatsettings").style.display = "flex";
+    }
+    function setAccent(color) { prefs.accent = color; localStorage.setItem("hg_prefs", JSON.stringify(prefs)); applyPrefs(); showToast("Accent color updated"); }
+    function setTextSize(sz) { prefs.textSize = sz; localStorage.setItem("hg_prefs", JSON.stringify(prefs)); applyPrefs(); openChatSettingsModal(); }
+    function openPrivacyModal() {
+        document.getElementById("toggleLastSeen").checked = myProfile.show_last_seen;
+        document.getElementById("oldPassInput").value = ""; document.getElementById("newPassInput").value = "";
+        document.getElementById("modal-privacy").style.display = "flex";
+    }
+    async function savePrivacy() {
+        const show_last_seen = document.getElementById("toggleLastSeen").checked;
+        const res = await fetch("/api/me/privacy", { method: "POST", headers: { "Content-Type": "application/json", "x-auth-token": myToken }, body: JSON.stringify({ show_last_seen }) });
+        if (res.ok) { myProfile.show_last_seen = show_last_seen; showToast(show_last_seen ? "Online status visible" : "Online status hidden"); }
+    }
+    async function changePassword() {
+        const res = await fetch("/api/me/password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-auth-token": myToken },
+            body: JSON.stringify({ old_password: document.getElementById("oldPassInput").value, new_password: document.getElementById("newPassInput").value })
+        });
+        const data = await res.json();
+        if (!res.ok) return showToast(data.detail || "Error");
+        closeModal("modal-privacy"); showToast("Password changed!");
+    }
+    function openNotifModal() {
+        document.getElementById("notifSound").checked = prefs.sound;
+        document.getElementById("notifBrowser").checked = prefs.browser;
+        document.getElementById("notifBadges").checked = prefs.badges;
+        document.getElementById("modal-notifications").style.display = "flex";
+    }
+    function saveNotifPrefs() {
+        prefs.sound = document.getElementById("notifSound").checked;
+        prefs.badges = document.getElementById("notifBadges").checked;
+        localStorage.setItem("hg_prefs", JSON.stringify(prefs));
+        updateTotalUnread(); renderRoomList();
+    }
+    async function toggleBrowserNotif(enabled) {
+        if (enabled && "Notification" in window) {
+            const perm = await Notification.requestPermission();
+            if (perm !== "granted") { document.getElementById("notifBrowser").checked = false; return showToast("Permission denied"); }
+        }
+        prefs.browser = enabled; localStorage.setItem("hg_prefs", JSON.stringify(prefs));
+    }
+    async function openStorageModal() {
+        document.getElementById("modal-storage").style.display = "flex";
+        const res = await fetch("/api/stats", { headers: { "x-auth-token": myToken } });
+        if (res.ok) {
+            const d = await res.json();
+            document.getElementById("statChats").innerText = d.total_chats;
+            document.getElementById("statMsgs").innerText = d.total_messages;
+            document.getElementById("statSize").innerText = d.db_size_kb + " KB";
+        }
+    }
+    function clearLocalCache() { unreadCounts = {}; updateTotalUnread(); renderRoomList(); closeModal("modal-storage"); showToast("Cache cleared!"); }
+
+    function renderProfileUI() {
+        const bg = getAvatarBg(myName), dName = myProfile.display_name || myName;
+        const sub = "@" + myName + (myProfile.email ? " • " + myProfile.email : "");
+        document.getElementById("settingsName").innerText = dName;
+        document.getElementById("settingsHandle").innerText = sub;
+        document.getElementById("settingsBio").innerText = myProfile.bio || "";
+        document.getElementById("settingsAvatar").childNodes[0].nodeValue = dName[0];
+        document.getElementById("settingsAvatar").style.background = bg;
+        document.getElementById("profileName").innerText = dName;
+        document.getElementById("profileHandle").innerText = sub;
+        document.getElementById("profileBio").innerText = myProfile.bio || "";
+        document.getElementById("profileAvatar").innerText = dName[0];
+        document.getElementById("profileAvatar").style.background = bg;
+        document.getElementById("navProfileAvatar").innerText = dName[0];
+        document.getElementById("navProfileAvatar").style.background = bg;
     }
 
     async function initApp() {
         document.getElementById("authOverlay").style.display = "none";
-        document.getElementById("drawerName").innerText = myName;
-        document.getElementById("drawerHandle").innerText = "@" + myName;
-        const dAv = document.getElementById("drawerAvatar");
-        dAv.innerText = myName[0];
-        dAv.style.background = getAvatarBg(myName);
-
+        const meRes = await fetch("/api/me", { headers: { "x-auth-token": myToken } });
+        if (meRes.status === 401) return logout();
+        myProfile = await meRes.json();
+        renderProfileUI();
         await loadRooms();
         connectWebSocket();
     }
@@ -453,243 +661,150 @@
     function connectWebSocket() {
         const protocol = location.protocol === "https:" ? "wss:" : "ws:";
         ws = new WebSocket(`${protocol}//${location.host}/ws/${myToken}`);
+        ws.onopen = () => document.getElementById("proxyStatus").innerText = "Connected";
         ws.onmessage = async (event) => {
             const data = JSON.parse(event.data);
-            if (data.type === "refresh_rooms") {
-                await loadRooms();
-            } else if (data.type === "new_message") {
-                if (activeRoom && activeRoom.id === data.room_id) {
-                    appendMessage(data);
-                } else if (data.sender !== myName) {
-                    unreadCounts[data.room_id] = (unreadCounts[data.room_id] || 0) + 1;
+            if (data.type === "refresh_rooms") { await loadRooms(); }
+            else if (data.type === "new_message") {
+                const isOther = data.sender !== myName;
+                if (activeRoom && activeRoom.id === data.room_id) appendMessage(data);
+                else if (isOther) { unreadCounts[data.room_id] = (unreadCounts[data.room_id] || 0) + 1; updateTotalUnread(); }
+                if (isOther) {
+                    if (prefs.sound) playNotifSound();
+                    if (prefs.browser && document.hidden && "Notification" in window && Notification.permission === "granted") {
+                        new Notification("Helligram • " + data.sender, { body: data.text });
+                    }
                 }
                 await loadRooms();
             }
         };
-        ws.onclose = (e) => { if (e.code === 1008) logout(); };
+        ws.onclose = (e) => { document.getElementById("proxyStatus").innerText = "Reconnecting..."; if (e.code === 1008) logout(); };
+    }
+
+    function updateTotalUnread() {
+        const total = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+        const badge = document.getElementById("totalUnreadBadge");
+        badge.style.display = (prefs.badges && total > 0) ? "flex" : "none";
+        badge.innerText = total;
     }
 
     async function loadRooms() {
         const res = await fetch("/api/rooms", { headers: { "x-auth-token": myToken } });
         if (res.status === 401) return logout();
-        const data = await res.json();
-        rooms = data.rooms || [];
+        rooms = (await res.json()).rooms || [];
+        if (activeRoom) {
+            const u = rooms.find(r => r.id === activeRoom.id);
+            if (u) { activeRoom = u; const m = document.getElementById("activeRoomMeta"); m.innerText = u.status; m.className = u.status === "online" ? "online" : ""; }
+        }
         if (!document.getElementById("searchInput").value.trim()) renderRoomList();
-    }
-
-    function getTypeSvg(type) {
-        if (type === "channel") return `<svg class="chat-type-icon" width="15" height="15" viewBox="0 0 24 24"><path d="M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4z"/></svg>`;
-        if (type === "group") return `<svg class="chat-type-icon" width="15" height="15" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`;
-        return "";
     }
 
     function renderRoomList() {
         const list = document.getElementById("chatList");
-        const filtered = currentFolder === "all" ? rooms : rooms.filter(r => r.type === currentFolder);
-        if (filtered.length === 0) {
-            list.innerHTML = `<div style="padding:36px 20px; text-align:center; color:#7f91a4; font-size:13.5px; line-height:1.5;">No chats in this folder.<br>Search a username or tap the pencil icon.</div>`;
-            return;
-        }
-        list.innerHTML = filtered.map(r => {
-            const unread = unreadCounts[r.id] || 0;
-            return `
-                <div class="chat-item ${activeRoom && activeRoom.id === r.id ? 'active' : ''}" onclick="openRoom(${r.id})">
-                    <div class="avatar" style="background:${getAvatarBg(r.name)}">${escapeHtml(r.name[0])}</div>
-                    <div class="chat-info">
-                        <div class="chat-top">
-                            <div class="chat-name-wrap">
-                                ${getTypeSvg(r.type)}
-                                <span class="chat-name">${escapeHtml(r.name)}</span>
-                            </div>
-                            <span class="chat-time">${escapeHtml(r.last_time)}</span>
-                        </div>
-                        <div class="chat-bottom">
-                            <div class="chat-preview">${escapeHtml(r.last_msg)}</div>
-                            ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ""}
-                        </div>
-                    </div>
-                </div>
-            `;
+        if (rooms.length === 0) { list.innerHTML = `<div style="padding:40px 20px; text-align:center; color:var(--text-muted); font-size:14px;">No chats yet.<br>Search a @username or tap the + button.</div>`; return; }
+        list.innerHTML = rooms.map(r => {
+            const unread = prefs.badges ? (unreadCounts[r.id] || 0) : 0;
+            return `<div class="chat-item ${activeRoom && activeRoom.id === r.id ? 'active' : ''}" onclick="openRoom(${r.id})">
+                <div class="avatar" style="background:${getAvatarBg(r.name)}">${escapeHtml(r.name.slice(0,2))}</div>
+                <div class="chat-info">
+                    <div class="chat-top"><span class="chat-name">${escapeHtml(r.name)}</span><div class="chat-time-wrap">${r.last_time ? `<span class="tick-green">✓</span>` : ""}<span>${escapeHtml(r.last_time)}</span></div></div>
+                    <div class="chat-bottom"><div class="chat-preview">${escapeHtml(r.last_msg)}</div>${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ""}</div>
+                </div></div>`;
         }).join("");
+    }
+
+    function renderContacts() {
+        const dms = rooms.filter(r => r.type === "dm"), box = document.getElementById("contactsList");
+        if (dms.length === 0) { box.innerHTML = `<div style="padding:30px 20px; text-align:center; color:var(--text-muted); font-size:14px;">Search any @username above to start a chat.</div>`; return; }
+        box.innerHTML = dms.map(r => `<div class="chat-item" onclick="openRoom(${r.id})"><div class="avatar" style="background:${getAvatarBg(r.name)}">${escapeHtml(r.name.slice(0,2))}</div><div class="chat-info"><div class="chat-name">${escapeHtml(r.name)}</div><div class="chat-preview" style="color:${r.status === 'online' ? 'var(--accent)' : 'var(--text-muted)'}">${escapeHtml(r.status)}</div></div></div>`).join("");
     }
 
     async function handleSearch() {
         const q = document.getElementById("searchInput").value.trim();
         if (!q) return renderRoomList();
-
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { headers: { "x-auth-token": myToken } });
-        const data = await res.json();
+        switchTab("chats");
+        const data = await (await fetch(`/api/search?q=${encodeURIComponent(q)}`, { headers: { "x-auth-token": myToken } })).json();
         let html = "";
         if (data.users.length > 0) {
-            html += `<div class="section-label">Global Search • Users</div>`;
-            html += data.users.map(u => `
-                <div class="chat-item" onclick="startDM('${escapeHtml(u)}')">
-                    <div class="avatar" style="background:${getAvatarBg(u)}">${escapeHtml(u[0])}</div>
-                    <div class="chat-info"><div class="chat-name">${escapeHtml(u)}</div><div class="chat-preview">@${escapeHtml(u)}</div></div>
-                </div>
-            `).join("");
+            html += `<div class="section-label">Users</div>` + data.users.map(u => `<div class="chat-item" onclick="startDM('${escapeHtml(u)}')"><div class="avatar" style="background:${getAvatarBg(u)}">${escapeHtml(u.slice(0,2))}</div><div class="chat-info"><div class="chat-name">${escapeHtml(u)}</div><div class="chat-preview">@${escapeHtml(u)}</div></div></div>`).join("");
         }
         if (data.rooms.length > 0) {
-            html += `<div class="section-label">Public Groups & Channels</div>`;
-            html += data.rooms.map(r => `
-                <div class="chat-item" onclick="joinRoom(${r.id})">
-                    <div class="avatar" style="background:${getAvatarBg(r.name)}">${escapeHtml(r.name[0])}</div>
-                    <div class="chat-info"><div class="chat-name">${escapeHtml(r.name)}</div><div class="chat-preview">Tap to join ${r.type}</div></div>
-                </div>
-            `).join("");
+            html += `<div class="section-label">Groups & Channels</div>` + data.rooms.map(r => `<div class="chat-item" onclick="joinRoom(${r.id})"><div class="avatar" style="background:${getAvatarBg(r.name)}">${escapeHtml(r.name.slice(0,2))}</div><div class="chat-info"><div class="chat-name">${escapeHtml(r.name)}</div><div class="chat-preview">Tap to join ${r.type}</div></div></div>`).join("");
         }
-        if (!html) html = `<div style="padding:30px; text-align:center; color:#7f91a4; font-size:13.5px;">No results found</div>`;
-        document.getElementById("chatList").innerHTML = html;
+        document.getElementById("chatList").innerHTML = html || `<div style="padding:30px; text-align:center; color:var(--text-muted);">No results found</div>`;
     }
 
+    async function openSavedMessages() {
+        const ex = rooms.find(r => r.name === "Saved Messages" && r.owner === myName);
+        if (ex) { switchTab("chats"); return openRoom(ex.id); }
+        const data = await (await fetch("/api/rooms/create", { method: "POST", headers: { "Content-Type": "application/json", "x-auth-token": myToken }, body: JSON.stringify({ name: "Saved Messages", type: "channel" }) })).json();
+        await loadRooms(); switchTab("chats"); openRoom(data.room_id);
+    }
     async function startDM(target) {
-        const res = await fetch("/api/dm", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-auth-token": myToken },
-            body: JSON.stringify({ target_username: target })
-        });
-        const data = await res.json();
-        document.getElementById("searchInput").value = "";
-        await loadRooms();
-        openRoom(data.room_id);
+        const data = await (await fetch("/api/dm", { method: "POST", headers: { "Content-Type": "application/json", "x-auth-token": myToken }, body: JSON.stringify({ target_username: target }) })).json();
+        document.getElementById("searchInput").value = ""; await loadRooms(); openRoom(data.room_id);
     }
-
     async function joinRoom(roomId) {
         await fetch(`/api/rooms/${roomId}/join`, { method: "POST", headers: { "x-auth-token": myToken } });
-        document.getElementById("searchInput").value = "";
-        await loadRooms();
-        openRoom(roomId);
-        showToast("Joined successfully");
+        document.getElementById("searchInput").value = ""; await loadRooms(); openRoom(roomId);
     }
 
     async function openRoom(roomId) {
         activeRoom = rooms.find(r => r.id === roomId);
         if (!activeRoom) return;
-
-        unreadCounts[roomId] = 0;
-        lastSenderInChat = null;
+        unreadCounts[roomId] = 0; updateTotalUnread();
         document.body.classList.add("chat-open");
         document.getElementById("chatHeader").style.display = "flex";
-        document.getElementById("emojiPopover").classList.remove("open");
-        toggleInfoPanel(false);
-
         const av = document.getElementById("activeRoomAvatar");
-        av.innerText = activeRoom.name[0];
-        av.style.background = getAvatarBg(activeRoom.name);
-
+        av.innerText = activeRoom.name.slice(0, 2); av.style.background = getAvatarBg(activeRoom.name);
         document.getElementById("activeRoomName").innerText = activeRoom.name;
-        document.getElementById("activeRoomMeta").innerText =
-            activeRoom.type === "dm" ? "last seen recently" : `${activeRoom.members} ${activeRoom.type === 'channel' ? 'subscribers' : 'members'}`;
+        const meta = document.getElementById("activeRoomMeta");
+        meta.innerText = activeRoom.status; meta.className = activeRoom.status === "online" ? "online" : "";
 
         const inputArea = document.getElementById("inputArea");
         inputArea.style.display = "flex";
         if (activeRoom.type === "channel" && activeRoom.owner !== myName) {
-            inputArea.innerHTML = `<div class="readonly-bar">📢 Broadcast Channel • Only admin can post</div>`;
+            inputArea.innerHTML = `<div class="readonly-bar">📢 Only admin can post in this channel</div>`;
         } else {
-            inputArea.innerHTML = `
-                <button class="icon-circle-btn" onclick="toggleEmoji()" title="Emoji">
-                    <svg width="22" height="22" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
-                </button>
-                <input type="text" id="msgInput" placeholder="Write a message..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button id="sendBtn" onclick="sendMessage()" title="Send">
-                    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                </button>
-            `;
+            inputArea.innerHTML = `<input type="text" id="msgInput" placeholder="Message" onkeypress="if(event.key==='Enter') sendMessage()"><button id="sendBtn" onclick="sendMessage()"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>`;
         }
 
-        const res = await fetch(`/api/rooms/${roomId}/messages`, { headers: { "x-auth-token": myToken } });
-        const data = await res.json();
+        const data = await (await fetch(`/api/rooms/${roomId}/messages`, { headers: { "x-auth-token": myToken } })).json();
         const msgBox = document.getElementById("messages");
         msgBox.innerHTML = "";
-        if (!data.messages || data.messages.length === 0) {
-            msgBox.innerHTML = `<div class="empty-state">No messages here yet...</div>`;
-        } else {
-            msgBox.innerHTML = `<div class="date-pill">Chat History</div>`;
-            data.messages.forEach(appendMessage);
-        }
+        if (!data.messages || data.messages.length === 0) msgBox.innerHTML = `<div class="empty-state">No messages yet...</div>`;
+        else data.messages.forEach(appendMessage);
         renderRoomList();
     }
 
-    function closeMobileChat() {
-        document.body.classList.remove("chat-open");
-        document.getElementById("emojiPopover").classList.remove("open");
-        toggleInfoPanel(false);
-    }
-
-    function toggleEmoji() {
-        document.getElementById("emojiPopover").classList.toggle("open");
-    }
-
-    function addEmoji(e) {
-        const input = document.getElementById("msgInput");
-        if (input) { input.value += e; input.focus(); }
-    }
-
+    function closeMobileChat() { document.body.classList.remove("chat-open"); }
     function appendMessage(data) {
-        const msgBox = document.getElementById("messages");
-        const empty = msgBox.querySelector(".empty-state");
+        const msgBox = document.getElementById("messages"), empty = msgBox.querySelector(".empty-state");
         if (empty) empty.remove();
-
-        const isMe = data.sender === myName;
-        const isGrouped = lastSenderInChat === data.sender;
-        lastSenderInChat = data.sender;
-
-        const div = document.createElement("div");
-        div.className = `msg ${isMe ? "me" : "other"} ${isGrouped ? "grouped" : ""}`;
-        const showName = !isMe && !isGrouped && activeRoom && activeRoom.type !== "dm";
-        div.innerHTML = `
-            ${showName ? `<div class="msg-user" style="color:${getNameColor(data.sender)}">${escapeHtml(data.sender)}</div>` : ""}
-            <span class="msg-body">${escapeHtml(data.text)}</span>
-            <span class="msg-meta">${escapeHtml(data.time)}${isMe ? " ✓✓" : ""}</span>
-        `;
-        msgBox.appendChild(div);
-        msgBox.scrollTop = msgBox.scrollHeight;
+        const isMe = data.sender === myName, div = document.createElement("div");
+        div.className = `msg ${isMe ? "me" : "other"}`;
+        div.innerHTML = `${!isMe && activeRoom && activeRoom.type !== "dm" ? `<div class="msg-user">${escapeHtml(data.sender)}</div>` : ""}<span>${escapeHtml(data.text)}</span><span class="msg-meta">${escapeHtml(data.time)}${isMe ? ' <span class="tick-green">✓✓</span>' : ""}</span>`;
+        msgBox.appendChild(div); msgBox.scrollTop = msgBox.scrollHeight;
     }
-
     function sendMessage() {
         const input = document.getElementById("msgInput");
         if (!input || !activeRoom) return;
         const text = input.value.trim();
-        if (text && ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ action: "send_message", room_id: activeRoom.id, text }));
-            input.value = "";
-            document.getElementById("emojiPopover").classList.remove("open");
-        }
+        if (text && ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify({ action: "send_message", room_id: activeRoom.id, text })); input.value = ""; }
     }
-
     function openCreateModal(type) {
         createRoomType = type;
         document.getElementById("createModalTitle").innerText = type === "group" ? "New Group" : "New Channel";
         document.getElementById("newRoomName").value = "";
         document.getElementById("createModal").style.display = "flex";
-        setTimeout(() => document.getElementById("newRoomName").focus(), 50);
     }
-
-    function closeCreateModal() {
-        document.getElementById("createModal").style.display = "none";
-    }
-
     async function confirmCreateRoom() {
         const name = document.getElementById("newRoomName").value.trim();
         if (name.length < 2) return showToast("Naam kam az kam 2 characters ka ho");
-        const res = await fetch("/api/rooms/create", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-auth-token": myToken },
-            body: JSON.stringify({ name, type: createRoomType })
-        });
-        const data = await res.json();
-        closeCreateModal();
-        await loadRooms();
-        openRoom(data.room_id);
-        showToast(createRoomType === "group" ? "Group created!" : "Channel created!");
+        const data = await (await fetch("/api/rooms/create", { method: "POST", headers: { "Content-Type": "application/json", "x-auth-token": myToken }, body: JSON.stringify({ name, type: createRoomType }) })).json();
+        closeModal("createModal"); await loadRooms(); openRoom(data.room_id);
     }
-
-    function logout() {
-        localStorage.removeItem("hg_username");
-        localStorage.removeItem("hg_token");
-        if (ws) ws.close();
-        location.reload();
-    }
+    function logout() { localStorage.removeItem("hg_username"); localStorage.removeItem("hg_token"); if (ws) ws.close(); location.reload(); }
 
     if (myToken && myName) initApp();
 </script>
