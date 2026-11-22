@@ -23,12 +23,10 @@
 
         body { background: var(--bg-main); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; }
 
-        /* Custom Thin Scrollbar */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
 
-        /* --- SIDEBAR (LEFT) --- */
         .sidebar { width: 340px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: relative; }
 
         .sidebar-top { padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
@@ -55,11 +53,9 @@
         .chat-preview { font-size: 13.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
         .section-label { padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--accent-light); background: #121b24; }
 
-        /* Floating Action Button (FAB) */
         .fab { position: absolute; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: #fff; border: none; font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; transition: transform 0.2s, background 0.2s; }
         .fab:hover { background: #5e97d1; transform: scale(1.06); }
 
-        /* --- SLIDE-OUT DRAWER (TELEGRAM MENU) --- */
         .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 30; display: none; }
         .drawer-backdrop.open { display: block; }
         .drawer { position: fixed; top: 0; left: -290px; width: 280px; height: 100vh; background: var(--bg-sidebar); z-index: 31; transition: left 0.25s ease; display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
@@ -73,7 +69,6 @@
         .drawer-item.danger { color: #ff6b6b; }
         .drawer-footer { padding: 14px 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
 
-        /* --- CHAT PANEL (RIGHT) --- */
         .chat-panel {
             flex: 1; display: flex; flex-direction: column; height: 100vh;
             background-color: var(--bg-main);
@@ -90,7 +85,6 @@
         #messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
         .empty-state { margin: auto; background: rgba(23, 33, 43, 0.85); color: #d0dce8; font-size: 14px; padding: 8px 18px; border-radius: 20px; text-align: center; }
 
-        /* Telegram Style Bubbles */
         .msg { position: relative; max-width: 72%; padding: 7px 11px 6px 12px; border-radius: 12px; font-size: 14.5px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.25); }
         .msg.me { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 3px; }
         .msg.other { align-self: flex-start; background: var(--msg-in); border-bottom-left-radius: 3px; }
@@ -99,13 +93,11 @@
         .msg-meta { float: right; margin-left: 10px; margin-top: 5px; font-size: 11px; color: rgba(255,255,255,0.55); display: inline-flex; align-items: center; gap: 3px; }
         .msg.me .msg-meta { color: #8ec5f5; }
 
-        /* Emoji Bar */
         .emoji-bar { display: none; background: var(--bg-sidebar); padding: 8px 14px; border-top: 1px solid var(--border); gap: 10px; overflow-x: auto; font-size: 20px; }
         .emoji-bar.open { display: flex; }
         .emoji-bar span { cursor: pointer; transition: transform 0.15s; user-select: none; }
         .emoji-bar span:hover { transform: scale(1.25); }
 
-        /* Input Area */
         .input-area { background: var(--bg-sidebar); padding: 8px 12px; display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--border); }
         .emoji-btn { background: none; border: none; font-size: 21px; cursor: pointer; padding: 6px; color: var(--text-muted); border-radius: 50%; }
         .emoji-btn:hover { background: var(--bg-hover); }
@@ -114,7 +106,6 @@
         #sendBtn:hover { background: var(--bg-hover); }
         .readonly-bar { width: 100%; text-align: center; color: var(--text-muted); font-size: 13.5px; padding: 10px; }
 
-        /* Auth & Create Modals */
         .overlay { position: fixed; inset: 0; background: rgba(14, 22, 33, 0.94); display: flex; justify-content: center; align-items: center; z-index: 40; }
         .modal-box { background: var(--bg-sidebar); padding: 28px 24px; border-radius: 14px; width: 90%; max-width: 360px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .logo-circle { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 30px; }
@@ -128,7 +119,6 @@
         .toggle-text span { color: var(--accent-light); font-weight: 600; }
         .err-text { color: #ff6b6b; font-size: 13px; margin-bottom: 10px; min-height: 18px; }
 
-        /* Mobile Responsive */
         @media (max-width: 768px) {
             .sidebar { width: 100%; }
             .chat-panel { display: none; width: 100%; }
@@ -142,7 +132,6 @@
 </head>
 <body>
 
-<!-- Auth Overlay -->
 <div id="authOverlay" class="overlay">
     <div class="modal-box">
         <div class="logo-circle">✈️</div>
@@ -157,7 +146,6 @@
     </div>
 </div>
 
-<!-- Create Group/Channel Modal -->
 <div id="createModal" class="overlay" style="display: none;">
     <div class="modal-box">
         <h2 id="createModalTitle">New Group</h2>
@@ -167,7 +155,6 @@
     </div>
 </div>
 
-<!-- Slide-out Drawer -->
 <div class="drawer-backdrop" id="drawerBackdrop" onclick="toggleDrawer(false)"></div>
 <div class="drawer" id="drawer">
     <div class="drawer-header">
@@ -183,7 +170,6 @@
     <div class="drawer-footer">Helligram Web • v2.0</div>
 </div>
 
-<!-- Left Sidebar -->
 <div class="sidebar">
     <div class="sidebar-top">
         <button class="menu-btn" onclick="toggleDrawer(true)">☰</button>
@@ -196,7 +182,6 @@
     <button class="fab" title="New Group" onclick="openCreateModal('group')">✏️</button>
 </div>
 
-<!-- Right Chat Panel -->
 <div class="chat-panel">
     <div class="chat-header" id="chatHeader" style="display: none;">
         <button class="back-btn" onclick="closeMobileChat()">←</button>
@@ -230,7 +215,6 @@
     let activeRoom = null;
     let createRoomType = "group";
 
-    // Telegram-style consistent avatar colors
     const avatarColors = ["#e17076", "#faa774", "#a695e7", "#7bc862", "#6ec9cb", "#65aadd", "#ee7aae"];
     function getAvatarColor(name) {
         let hash = 0;
