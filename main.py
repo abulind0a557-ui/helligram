@@ -30,27 +30,28 @@ def init_db():
         )
     """)
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS messages (
+        CREATE TABLE IF NOT EXISTS rooms (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            text TEXT NOT NULL,
-            time TEXT NOT NULL,
-            is_bot INTEGER DEFAULT 0
+            name TEXT NOT NULL,
+            type TEXT NOT NULL, -- 'dm', 'group', 'channel'
+            owner_username TEXT NOT NULL,
+            created_at TEXT NOT NULL
         )
     """)
-    # Purane DB mein agar is_bot column na ho toh safe tarike se add karein
-    try:
-        cur.execute("ALTER TABLE messages ADD COLUMN is_bot INTEGER DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass
-
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS bots (
+        CREATE TABLE IF NOT EXISTS room_members (
+            room_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            PRIMARY KEY (room_id, username)
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS room_messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            owner_username TEXT NOT NULL,
-            bot_name TEXT UNIQUE NOT NULL,
-            token TEXT UNIQUE NOT NULL,
-            created_at TEXT NOT NULL
+            room_id INTEGER NOT NULL,
+            sender TEXT NOT NULL,
+            text TEXT NOT NULL,
+            time TEXT NOT NULL
         )
     """)
     conn.commit()
@@ -62,17 +63,9 @@ def hash_password(password: str) -> str:
     salt = "helligram_secret_salt_v1"
     return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 100000).hex()
 
-class AuthRequest(BaseModel):
-    username: str
-    password: str
-
-class CreateBotRequest(BaseModel):
-    bot_name: str
-
-class BotMessageRequest(BaseModel):
-    text: str
-
 def get_user_by_token(token: str):
+    if not token:
+        return None
     conn = get_db()
     cur = conn.cursor()
     cur.execute("SELECT username FROM users WHERE token = ?", (token,))
@@ -80,38 +73,45 @@ def get_user_by_token(token: str):
     conn.close()
     return row["username"] if row else None
 
-def get_bot_by_token(bot_token: str):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT id, bot_name, owner_username FROM bots WHERE token = ?", (bot_token,))
-    row = cur.fetchone()
-    conn.close()
-    return dict(row) if row else None
+class AuthRequest(BaseModel):
+    username: str
+    password: str
 
-def save_message(username: str, text: str, time_str: str, is_bot: int = 0):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO messages (username, text, time, is_bot) VALUES (?, ?, ?, ?)",
-        (username, text, time_str, is_bot)
-    )
-    msg_id = cur.lastrowid
-    conn.commit()
-    conn.close()
-    return msg_id
+class CreateRoomRequest(BaseModel):
+    name: str
+    type: str  # 'group' or 'channel'
 
-def get_recent_messages(limit: int = 50):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT id, username, text, time, is_bot FROM messages ORDER BY id DESC LIMIT ?", (limit,))
-    rows = cur.fetchall()
-    conn.close()
-    return [
-        {"type": "chat", "id": r["id"], "user": r["username"], "text": r["text"], "time": r["time"], "is_bot": bool(r["is_bot"])}
-        for r in reversed(rows)
-    ]
+class StartDMRequest(BaseModel):
+    target_username: str
 
-# --- AUTH API ---
+# --- WEBSOCKET MANAGER ---
+class ConnectionManager:
+    def __init__(self):
+        # username -> set of active WebSockets (taake mobile + PC dono par chale)
+        self.user_sockets: dict[str, set[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, username: str):
+        await websocket.accept()
+        self.user_sockets.setdefault(username, set()).add(websocket)
+
+    def disconnect(self, websocket: WebSocket, username: str):
+        if username in self.user_sockets:
+            self.user_sockets[username].discard(websocket)
+            if not self.user_sockets[username]:
+                del self.user_sockets[username]
+
+    async def send_to_users(self, usernames: list[str], payload: dict):
+        msg_str = json.dumps(payload)
+        for u in usernames:
+            for ws in list(self.user_sockets.get(u, [])):
+                try:
+                    await ws.send_text(msg_str)
+                except Exception:
+                    self.disconnect(ws, u)
+
+manager = ConnectionManager()
+
+# --- AUTH ROUTES ---
 @app.post("/api/signup")
 async def signup(req: AuthRequest):
     username = req.username.strip()
@@ -144,146 +144,164 @@ async def login(req: AuthRequest):
         raise HTTPException(status_code=401, detail="Username ya password ghalat hai.")
     return {"username": row["username"], "token": row["token"]}
 
-# --- BOTFATHER API (User ke liye) ---
-@app.post("/api/bots/create")
-async def create_bot(req: CreateBotRequest, x_auth_token: str = Header(None)):
-    username = get_user_by_token(x_auth_token or "")
+# --- CHATS, GROUPS & CHANNELS API ---
+@app.get("/api/rooms")
+async def get_my_rooms(x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
     if not username:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    bot_name = req.bot_name.strip()
-    if len(bot_name) < 3:
-        raise HTTPException(status_code=400, detail="Bot ka naam kam az kam 3 characters ka ho.")
-    if not bot_name.lower().endswith("bot"):
-        bot_name += "_bot"
 
-    bot_token = f"{secrets.randbelow(899999) + 100000}:{secrets.token_urlsafe(24)}"
     conn = get_db()
     cur = conn.cursor()
-    try:
-        cur.execute(
-            "INSERT INTO bots (owner_username, bot_name, token, created_at) VALUES (?, ?, ?, ?)",
-            (username, bot_name, bot_token, datetime.now().isoformat())
-        )
-        conn.commit()
-        return {"bot_name": bot_name, "token": bot_token}
-    except sqlite3.IntegrityError:
-        raise HTTPException(status_code=400, detail="Is naam ka bot pehle se mojood hai.")
-    finally:
-        conn.close()
-
-@app.get("/api/bots/list")
-async def list_bots(x_auth_token: str = Header(None)):
-    username = get_user_by_token(x_auth_token or "")
-    if not username:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT id, bot_name, token FROM bots WHERE owner_username = ? ORDER BY id DESC", (username,))
+    cur.execute("""
+        SELECT r.id, r.name, r.type, r.owner_username,
+               (SELECT text FROM room_messages WHERE room_id = r.id ORDER BY id DESC LIMIT 1) as last_msg,
+               (SELECT time FROM room_messages WHERE room_id = r.id ORDER BY id DESC LIMIT 1) as last_time,
+               (SELECT COUNT(*) FROM room_members WHERE room_id = r.id) as member_count
+        FROM rooms r
+        JOIN room_members rm ON r.id = rm.room_id
+        WHERE rm.username = ?
+        ORDER BY (SELECT COALESCE(MAX(id), 0) FROM room_messages WHERE room_id = r.id) DESC, r.id DESC
+    """, (username,))
     rows = cur.fetchall()
-    conn.close()
-    return {"bots": [dict(r) for r in rows]}
 
-@app.delete("/api/bots/{bot_id}")
-async def delete_bot(bot_id: int, x_auth_token: str = Header(None)):
-    username = get_user_by_token(x_auth_token or "")
+    rooms = []
+    for r in rows:
+        display_name = r["name"]
+        if r["type"] == "dm":
+            # DM mein doosre bande ka naam dikhayein
+            cur.execute("SELECT username FROM room_members WHERE room_id = ? AND username != ?", (r["id"], username))
+            other = cur.fetchone()
+            display_name = other["username"] if other else username
+        rooms.append({
+            "id": r["id"],
+            "name": display_name,
+            "type": r["type"],
+            "owner": r["owner_username"],
+            "last_msg": r["last_msg"] or "No messages yet",
+            "last_time": r["last_time"] or "",
+            "members": r["member_count"]
+        })
+    conn.close()
+    return {"rooms": rooms}
+
+@app.get("/api/search")
+async def search_all(q: str = "", x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
     if not username:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    q = q.strip()
+    if not q:
+        return {"users": [], "rooms": []}
+
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("DELETE FROM bots WHERE id = ? AND owner_username = ?", (bot_id, username))
+    cur.execute("SELECT username FROM users WHERE username LIKE ? AND username != ? LIMIT 10", (f"%{q}%", username))
+    users = [r["username"] for r in cur.fetchall()]
+
+    cur.execute("SELECT id, name, type FROM rooms WHERE type IN ('group', 'channel') AND name LIKE ? LIMIT 10", (f"%{q}%",))
+    rooms = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return {"users": users, "rooms": rooms}
+
+@app.post("/api/dm")
+async def start_dm(req: StartDMRequest, x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    target = req.target_username.strip()
+    if target == username:
+        raise HTTPException(status_code=400, detail="Khud se DM nahi kar sakte.")
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT username FROM users WHERE username = ?", (target,))
+    if not cur.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="User nahi mila.")
+
+    # Check karein agar pehle se DM mojood hai
+    cur.execute("""
+        SELECT r.id FROM rooms r
+        JOIN room_members m1 ON r.id = m1.room_id AND m1.username = ?
+        JOIN room_members m2 ON r.id = m2.room_id AND m2.username = ?
+        WHERE r.type = 'dm'
+    """, (username, target))
+    existing = cur.fetchone()
+    if existing:
+        conn.close()
+        return {"room_id": existing["id"]}
+
+    cur.execute(
+        "INSERT INTO rooms (name, type, owner_username, created_at) VALUES (?, 'dm', ?, ?)",
+        (f"DM:{username}:{target}", username, datetime.now().isoformat())
+    )
+    room_id = cur.lastrowid
+    cur.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (room_id, username))
+    cur.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (room_id, target))
     conn.commit()
     conn.close()
-    return {"ok": True}
 
-# --- WEBSOCKET MANAGER ---
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: dict[WebSocket, str] = {}
+    await manager.send_to_users([target], {"type": "refresh_rooms"})
+    return {"room_id": room_id}
 
-    async def connect(self, websocket: WebSocket, username: str):
-        await websocket.accept()
-        self.active_connections[websocket] = username
-        history = get_recent_messages(50)
-        await websocket.send_text(json.dumps({
-            "type": "history",
-            "messages": history,
-            "online": len(self.active_connections)
-        }))
-        await self.broadcast({
-            "type": "system",
-            "text": f"{username} joined Helligram",
-            "online": len(self.active_connections)
-        })
+@app.post("/api/rooms/create")
+async def create_room(req: CreateRoomRequest, x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    name = req.name.strip()
+    if len(name) < 2 or req.type not in ("group", "channel"):
+        raise HTTPException(status_code=400, detail="Valid naam aur type dein.")
 
-    async def disconnect(self, websocket: WebSocket):
-        username = self.active_connections.pop(websocket, "Someone")
-        await self.broadcast({
-            "type": "system",
-            "text": f"{username} left",
-            "online": len(self.active_connections)
-        })
-
-    async def broadcast(self, message: dict):
-        dead_connections = []
-        for connection in self.active_connections:
-            try:
-                await connection.send_text(json.dumps(message))
-            except Exception:
-                dead_connections.append(connection)
-        for conn in dead_connections:
-            self.active_connections.pop(conn, None)
-
-manager = ConnectionManager()
-
-# --- CUSTOM HELLIGRAM BOT API (Python Scripts ke liye) ---
-@app.get("/bot{bot_token}/getMe")
-async def bot_get_me(bot_token: str):
-    bot = get_bot_by_token(bot_token)
-    if not bot:
-        raise HTTPException(status_code=401, detail="Invalid Bot Token")
-    return {"ok": True, "result": bot}
-
-@app.post("/bot{bot_token}/sendMessage")
-async def bot_send_message(bot_token: str, req: BotMessageRequest):
-    bot = get_bot_by_token(bot_token)
-    if not bot:
-        raise HTTPException(status_code=401, detail="Invalid Bot Token")
-    text = req.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="Message khali nahi ho sakta")
-
-    time_now = datetime.now().strftime("%I:%M %p")
-    msg_id = save_message(bot["bot_name"], text, time_now, is_bot=1)
-    await manager.broadcast({
-        "type": "chat",
-        "id": msg_id,
-        "user": bot["bot_name"],
-        "text": text,
-        "time": time_now,
-        "is_bot": True,
-        "online": len(manager.active_connections)
-    })
-    return {"ok": True, "message_id": msg_id, "bot": bot["bot_name"]}
-
-@app.get("/bot{bot_token}/getUpdates")
-async def bot_get_updates(bot_token: str, offset: int = 0):
-    bot = get_bot_by_token(bot_token)
-    if not bot:
-        raise HTTPException(status_code=401, detail="Invalid Bot Token")
     conn = get_db()
     cur = conn.cursor()
-    # Sirf humans ke naye messages return karega taake bot khud ko reply na kare
     cur.execute(
-        "SELECT id, username, text, time FROM messages WHERE id > ? AND is_bot = 0 ORDER BY id ASC LIMIT 20",
-        (offset,)
+        "INSERT INTO rooms (name, type, owner_username, created_at) VALUES (?, ?, ?, ?)",
+        (name, req.type, username, datetime.now().isoformat())
     )
-    rows = cur.fetchall()
+    room_id = cur.lastrowid
+    cur.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (room_id, username))
+    conn.commit()
     conn.close()
-    return {
-        "ok": True,
-        "result": [{"update_id": r["id"], "from": r["username"], "text": r["text"], "time": r["time"]} for r in rows]
-    }
+    return {"room_id": room_id}
+
+@app.post("/api/rooms/{room_id}/join")
+async def join_room(room_id: int, x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, type FROM rooms WHERE id = ?", (room_id,))
+    room = cur.fetchone()
+    if not room or room["type"] == "dm":
+        conn.close()
+        raise HTTPException(status_code=404, detail="Room nahi mila.")
+
+    cur.execute("INSERT OR IGNORE INTO room_members (room_id, username) VALUES (?, ?)", (room_id, username))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "room_id": room_id}
+
+@app.get("/api/rooms/{room_id}/messages")
+async def get_room_messages(room_id: int, x_auth_token: str = Header(None)):
+    username = get_user_by_token(x_auth_token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM room_members WHERE room_id = ? AND username = ?", (room_id, username))
+    if not cur.fetchone():
+        conn.close()
+        raise HTTPException(status_code=403, detail="Aap is chat ke member nahi hain.")
+
+    cur.execute("SELECT id, sender, text, time FROM room_messages WHERE room_id = ? ORDER BY id ASC LIMIT 100", (room_id,))
+    msgs = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return {"messages": msgs}
 
 # --- FRONTEND & WEBSOCKET ---
 @app.get("/")
@@ -301,23 +319,52 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     await manager.connect(websocket, username)
     try:
         while True:
-            data = await websocket.receive_text()
-            text = data.strip()
-            if not text:
-                continue
-            time_now = datetime.now().strftime("%I:%M %p")
-            msg_id = save_message(username, text, time_now, is_bot=0)
-            await manager.broadcast({
-                "type": "chat",
-                "id": msg_id,
-                "user": username,
-                "text": text,
-                "time": time_now,
-                "is_bot": False,
-                "online": len(manager.active_connections)
-            })
+            raw = await websocket.receive_text()
+            data = json.loads(raw)
+            if data.get("action") == "send_message":
+                room_id = data.get("room_id")
+                text = (data.get("text") or "").strip()
+                if not room_id or not text:
+                    continue
+
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("SELECT type, owner_username FROM rooms WHERE id = ?", (room_id,))
+                room = cur.fetchone()
+                if not room:
+                    conn.close()
+                    continue
+
+                # Channel mein sirf owner post kar sakta hai
+                if room["type"] == "channel" and room["owner_username"] != username:
+                    conn.close()
+                    continue
+
+                cur.execute("SELECT username FROM room_members WHERE room_id = ?", (room_id,))
+                members = [r["username"] for r in cur.fetchall()]
+                if username not in members:
+                    conn.close()
+                    continue
+
+                time_now = datetime.now().strftime("%I:%M %p")
+                cur.execute(
+                    "INSERT INTO room_messages (room_id, sender, text, time) VALUES (?, ?, ?, ?)",
+                    (room_id, username, text, time_now)
+                )
+                msg_id = cur.lastrowid
+                conn.commit()
+                conn.close()
+
+                await manager.send_to_users(members, {
+                    "type": "new_message",
+                    "room_id": room_id,
+                    "id": msg_id,
+                    "sender": username,
+                    "text": text,
+                    "time": time_now
+                })
     except WebSocketDisconnect:
-        await manager.disconnect(websocket)
+        manager.disconnect(websocket, username)
 
 if __name__ == "__main__":
     import uvicorn
