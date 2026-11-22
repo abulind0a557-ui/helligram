@@ -6,50 +6,73 @@
     <title>Helligram</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #0e1621; color: #f5f5f5; height: 100vh; display: flex; flex-direction: column; }
+        body { background: #0e1621; color: #f5f5f5; height: 100vh; overflow: hidden; display: flex; }
 
-        /* Header */
-        .header { background: #17212b; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0b1017; }
-        .header-left h2 { font-size: 18px; color: #fff; }
-        .online-badge { font-size: 12px; color: #6ab2f2; }
-        .header-actions { display: flex; gap: 8px; }
-        .bot-btn { background: #2b5278; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
-        .logout-btn { background: #242f3d; color: #ff6b6b; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        /* Sidebar (Left Panel) */
+        .sidebar { width: 320px; background: #17212b; border-right: 1px solid #0b1017; display: flex; flex-direction: column; height: 100vh; }
+        .sidebar-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0b1017; }
+        .sidebar-header h2 { font-size: 18px; color: #6ab2f2; }
+        .icon-btn { background: #242f3d; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .logout-btn { color: #ff6b6b; }
 
-        /* Chat Area */
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .search-box { padding: 10px 12px; border-bottom: 1px solid #0b1017; }
+        .search-box input { width: 100%; background: #242f3d; border: none; color: #fff; padding: 9px 14px; border-radius: 18px; font-size: 14px; outline: none; }
+
+        .quick-actions { display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid #0b1017; }
+        .quick-actions button { flex: 1; background: #2b5278; color: #fff; border: none; padding: 7px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; border-bottom: 1px solid #121b24; }
+        .chat-item:hover, .chat-item.active { background: #2b5278; }
+        .avatar { width: 42px; height: 42px; border-radius: 50%; background: #5288c1; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 16px; flex-shrink: 0; text-transform: uppercase; }
+        .avatar.group { background: #2e7d32; }
+        .avatar.channel { background: #8e24aa; }
+        .chat-info { flex: 1; min-width: 0; }
+        .chat-top { display: flex; justify-content: space-between; align-items: center; }
+        .chat-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-time { font-size: 11px; color: #8c9ba5; }
+        .chat-preview { font-size: 12px; color: #8c9ba5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; }
+        .section-label { padding: 6px 14px; font-size: 11px; color: #6ab2f2; background: #121b24; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Chat Window (Right Panel) */
+        .chat-panel { flex: 1; display: flex; flex-direction: column; height: 100vh; background: #0e1621; }
+        .chat-header { background: #17212b; padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #0b1017; }
+        .back-btn { display: none; background: none; border: none; color: #6ab2f2; font-size: 20px; cursor: pointer; padding-right: 4px; }
+        .chat-header-info h3 { font-size: 16px; }
+        .chat-header-info span { font-size: 12px; color: #8c9ba5; }
+
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .empty-state { flex: 1; display: flex; justify-content: center; align-items: center; color: #8c9ba5; font-size: 15px; text-align: center; padding: 20px; }
         .msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 15px; line-height: 1.4; word-wrap: break-word; }
         .msg.me { align-self: flex-end; background: #2b5278; border-bottom-right-radius: 2px; }
         .msg.other { align-self: flex-start; background: #182533; border-bottom-left-radius: 2px; }
-        .msg.bot { align-self: flex-start; background: #1c2e3d; border: 1px solid #3d6c99; border-bottom-left-radius: 2px; }
-        .msg-user { font-size: 12px; font-weight: bold; color: #6ab2f2; margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
-        .bot-tag { background: #5288c1; color: #fff; font-size: 9px; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.5px; }
+        .msg-user { font-size: 12px; font-weight: bold; color: #6ab2f2; margin-bottom: 2px; }
         .msg-time { font-size: 10px; color: #8c9ba5; text-align: right; margin-top: 4px; }
-        .system-msg { align-self: center; background: #182533; color: #8c9ba5; font-size: 12px; padding: 4px 12px; border-radius: 12px; }
 
-        /* Input Area */
-        .input-area { background: #17212b; padding: 10px 15px; display: flex; gap: 10px; }
-        #msgInput { flex: 1; background: #242f3d; border: none; color: #fff; padding: 12px 15px; border-radius: 20px; font-size: 15px; outline: none; }
-        #sendBtn { background: #5288c1; color: white; border: none; padding: 0 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        .input-area { background: #17212b; padding: 10px 15px; display: flex; gap: 10px; align-items: center; }
+        #msgInput { flex: 1; background: #242f3d; border: none; color: #fff; padding: 11px 15px; border-radius: 20px; font-size: 15px; outline: none; }
+        #sendBtn { background: #5288c1; color: white; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        .readonly-bar { width: 100%; text-align: center; color: #8c9ba5; font-size: 13px; padding: 8px; }
 
-        /* Auth & BotFather Modals */
-        .overlay { position: fixed; inset: 0; background: rgba(14, 22, 33, 0.92); display: flex; justify-content: center; align-items: center; z-index: 10; }
-        .modal-box { background: #17212b; padding: 25px; border-radius: 12px; width: 92%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
-        .modal-box h2 { margin-bottom: 15px; color: #6ab2f2; text-align: center; }
-        .modal-box input { width: 100%; padding: 11px; margin-bottom: 10px; border-radius: 8px; border: none; background: #242f3d; color: #fff; font-size: 14px; outline: none; }
+        /* Auth & Create Modals */
+        .overlay { position: fixed; inset: 0; background: rgba(14, 22, 33, 0.94); display: flex; justify-content: center; align-items: center; z-index: 20; }
+        .modal-box { background: #17212b; padding: 25px; border-radius: 12px; width: 90%; max-width: 350px; text-align: center; }
+        .modal-box h2 { margin-bottom: 16px; color: #6ab2f2; }
+        .modal-box input { width: 100%; padding: 11px; margin-bottom: 12px; border-radius: 8px; border: none; background: #242f3d; color: #fff; font-size: 14px; outline: none; }
         .primary-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; background: #5288c1; color: #fff; font-size: 14px; font-weight: bold; cursor: pointer; }
-        .toggle-text { margin-top: 15px; font-size: 13px; color: #8c9ba5; cursor: pointer; text-align: center; }
+        .cancel-btn { background: #242f3d; color: #ccc; margin-top: 8px; }
+        .toggle-text { margin-top: 14px; font-size: 13px; color: #8c9ba5; cursor: pointer; }
         .toggle-text span { color: #6ab2f2; font-weight: bold; }
-        .err-text { color: #ff6b6b; font-size: 13px; margin-bottom: 10px; text-align: center; min-height: 16px; }
+        .err-text { color: #ff6b6b; font-size: 13px; margin-bottom: 10px; min-height: 16px; }
 
-        /* Bot List */
-        .bot-item { background: #242f3d; padding: 10px; border-radius: 8px; margin-top: 10px; }
-        .bot-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .bot-name { font-weight: bold; color: #6ab2f2; font-size: 14px; }
-        .bot-token { background: #0e1621; padding: 6px; border-radius: 5px; font-family: monospace; font-size: 11px; word-break: break-all; color: #a5d6a7; }
-        .small-btn { background: #5288c1; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 6px; margin-right: 5px; }
-        .del-btn { background: #c0392b; }
-        .close-btn { background: #242f3d; color: #ccc; margin-top: 12px; }
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; }
+            .chat-panel { display: none; width: 100%; }
+            body.chat-open .sidebar { display: none; }
+            body.chat-open .chat-panel { display: flex; }
+            .back-btn { display: inline-block; }
+        }
     </style>
 </head>
 <body>
@@ -68,35 +91,48 @@
     </div>
 </div>
 
-<!-- BotFather Modal -->
-<div id="botModal" class="overlay" style="display: none;">
+<!-- Create Group/Channel Modal -->
+<div id="createModal" class="overlay" style="display: none;">
     <div class="modal-box">
-        <h2>🤖 Helligram BotFather</h2>
-        <div id="botError" class="err-text"></div>
-        <input type="text" id="newBotName" placeholder="Naye bot ka naam (e.g. helper_bot)">
-        <button class="primary-btn" onclick="createBot()">+ Create New Bot</button>
-        <div id="botList"></div>
-        <button class="primary-btn close-btn" onclick="closeBotModal()">Close</button>
+        <h2 id="createModalTitle">New Group</h2>
+        <input type="text" id="newRoomName" placeholder="Naam likhein...">
+        <button class="primary-btn" onclick="confirmCreateRoom()">Create</button>
+        <button class="primary-btn cancel-btn" onclick="closeCreateModal()">Cancel</button>
     </div>
 </div>
 
-<!-- Main UI -->
-<div class="header">
-    <div class="header-left">
+<!-- Left Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-header">
         <h2>Helligram</h2>
-        <span class="online-badge" id="onlineCount">Connecting...</span>
+        <button class="icon-btn logout-btn" onclick="logout()">Logout</button>
     </div>
-    <div class="header-actions">
-        <button class="bot-btn" onclick="openBotModal()">🤖 Bots</button>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Search users, groups, channels..." oninput="handleSearch()">
     </div>
+    <div class="quick-actions">
+        <button onclick="openCreateModal('group')">+ Group</button>
+        <button onclick="openCreateModal('channel')">+ Channel</button>
+    </div>
+    <div class="chat-list" id="chatList"></div>
 </div>
 
-<div id="messages"></div>
-
-<div class="input-area">
-    <input type="text" id="msgInput" placeholder="Message likhein..." onkeypress="if(event.key==='Enter') sendMessage()">
-    <button id="sendBtn" onclick="sendMessage()">Send</button>
+<!-- Right Chat Panel -->
+<div class="chat-panel">
+    <div class="chat-header" id="chatHeader" style="display: none;">
+        <button class="back-btn" onclick="closeMobileChat()">←</button>
+        <div class="chat-header-info">
+            <h3 id="activeRoomName">Chat</h3>
+            <span id="activeRoomMeta"></span>
+        </div>
+    </div>
+    <div id="messages">
+        <div class="empty-state">Kisi chat ko select karein ya upar search karke naya user/group dhundein.</div>
+    </div>
+    <div class="input-area" id="inputArea" style="display: none;">
+        <input type="text" id="msgInput" placeholder="Message likhein..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
 </div>
 
 <script>
@@ -104,10 +140,13 @@
     let isSignup = false;
     let myName = localStorage.getItem("hg_username") || "";
     let myToken = localStorage.getItem("hg_token") || "";
+    let rooms = [];
+    let activeRoom = null;
+    let createRoomType = "group";
 
     function escapeHtml(text) {
         const div = document.createElement("div");
-        div.innerText = text;
+        div.innerText = text || "";
         return div.innerHTML;
     }
 
@@ -124,130 +163,201 @@
         const password = document.getElementById("passwordInput").value;
         const errDiv = document.getElementById("authError");
         errDiv.innerText = "";
-
-        const endpoint = isSignup ? "/api/signup" : "/api/login";
-        try {
-            const res = await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            if (!res.ok) { errDiv.innerText = data.detail || "Error aaya hai"; return; }
-            myName = data.username;
-            myToken = data.token;
-            localStorage.setItem("hg_username", myName);
-            localStorage.setItem("hg_token", myToken);
-            connectWebSocket();
-        } catch (e) {
-            errDiv.innerText = "Server se connect nahi ho saka.";
-        }
+        const res = await fetch(isSignup ? "/api/signup" : "/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) { errDiv.innerText = data.detail || "Error"; return; }
+        myName = data.username;
+        myToken = data.token;
+        localStorage.setItem("hg_username", myName);
+        localStorage.setItem("hg_token", myToken);
+        initApp();
     }
 
-    function appendMessage(data) {
-        const msgBox = document.getElementById("messages");
-        const div = document.createElement("div");
-        if (data.type === "system") {
-            div.className = "system-msg";
-            div.innerText = data.text;
-        } else {
-            const isMe = !data.is_bot && data.user === myName;
-            div.className = `msg ${data.is_bot ? "bot" : (isMe ? "me" : "other")}`;
-            const botBadge = data.is_bot ? `<span class="bot-tag">BOT</span>` : "";
-            div.innerHTML = `
-                ${!isMe ? `<div class="msg-user">${escapeHtml(data.user)} ${botBadge}</div>` : ""}
-                <div>${escapeHtml(data.text)}</div>
-                <div class="msg-time">${escapeHtml(data.time)}</div>
-            `;
-        }
-        msgBox.appendChild(div);
-        msgBox.scrollTop = msgBox.scrollHeight;
+    async function initApp() {
+        document.getElementById("authOverlay").style.display = "none";
+        await loadRooms();
+        connectWebSocket();
     }
 
     function connectWebSocket() {
-        document.getElementById("authOverlay").style.display = "none";
-        document.getElementById("messages").innerHTML = "";
-
         const protocol = location.protocol === "https:" ? "wss:" : "ws:";
         ws = new WebSocket(`${protocol}//${location.host}/ws/${myToken}`);
-
-        ws.onmessage = (event) => {
+        ws.onmessage = async (event) => {
             const data = JSON.parse(event.data);
-            if (data.online !== undefined) {
-                document.getElementById("onlineCount").innerText = `${data.online} online`;
-            }
-            if (data.type === "history") {
-                data.messages.forEach(appendMessage);
-            } else {
-                appendMessage(data);
+            if (data.type === "refresh_rooms") {
+                await loadRooms();
+            } else if (data.type === "new_message") {
+                if (activeRoom && activeRoom.id === data.room_id) {
+                    appendMessage(data);
+                }
+                await loadRooms();
             }
         };
         ws.onclose = (e) => { if (e.code === 1008) logout(); };
     }
 
-    function sendMessage() {
-        const input = document.getElementById("msgInput");
-        const text = input.value.trim();
-        if (text && ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(text);
-            input.value = "";
+    async function loadRooms() {
+        const res = await fetch("/api/rooms", { headers: { "x-auth-token": myToken } });
+        if (res.status === 401) return logout();
+        const data = await res.json();
+        rooms = data.rooms || [];
+        if (!document.getElementById("searchInput").value.trim()) {
+            renderRoomList();
         }
     }
 
-    // --- BOTFATHER FUNCTIONS ---
-    async function openBotModal() {
-        document.getElementById("botModal").style.display = "flex";
-        document.getElementById("botError").innerText = "";
-        await loadBots();
-    }
-
-    function closeBotModal() {
-        document.getElementById("botModal").style.display = "none";
-    }
-
-    async function loadBots() {
-        const res = await fetch("/api/bots/list", { headers: { "x-auth-token": myToken } });
-        const data = await res.json();
-        const listDiv = document.getElementById("botList");
-        if (!data.bots || data.bots.length === 0) {
-            listDiv.innerHTML = `<p style="color:#8c9ba5; font-size:13px; text-align:center; margin-top:15px;">Abhi tak koi bot nahi banaya.</p>`;
+    function renderRoomList() {
+        const list = document.getElementById("chatList");
+        if (rooms.length === 0) {
+            list.innerHTML = `<div style="padding:20px; text-align:center; color:#8c9ba5; font-size:13px;">Abhi koi chat nahi. Upar search karein ya Group/Channel banayein.</div>`;
             return;
         }
-        listDiv.innerHTML = data.bots.map(b => `
-            <div class="bot-item">
-                <div class="bot-item-header">
-                    <span class="bot-name">@${escapeHtml(b.bot_name)}</span>
+        list.innerHTML = rooms.map(r => `
+            <div class="chat-item ${activeRoom && activeRoom.id === r.id ? 'active' : ''}" onclick="openRoom(${r.id})">
+                <div class="avatar ${r.type}">${escapeHtml(r.name[0])}</div>
+                <div class="chat-info">
+                    <div class="chat-top">
+                        <span class="chat-name">${r.type === 'channel' ? '📢 ' : (r.type === 'group' ? '👥 ' : '')}${escapeHtml(r.name)}</span>
+                        <span class="chat-time">${escapeHtml(r.last_time)}</span>
+                    </div>
+                    <div class="chat-preview">${escapeHtml(r.last_msg)}</div>
                 </div>
-                <div class="bot-token">${escapeHtml(b.token)}</div>
-                <button class="small-btn" onclick="copyToken('${escapeHtml(b.token)}')">Copy Token</button>
-                <button class="small-btn del-btn" onclick="deleteBot(${b.id})">Delete</button>
             </div>
         `).join("");
     }
 
-    async function createBot() {
-        const nameInput = document.getElementById("newBotName");
-        const errDiv = document.getElementById("botError");
-        errDiv.innerText = "";
-        const res = await fetch("/api/bots/create", {
+    async function handleSearch() {
+        const q = document.getElementById("searchInput").value.trim();
+        if (!q) return renderRoomList();
+
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { headers: { "x-auth-token": myToken } });
+        const data = await res.json();
+        let html = "";
+        if (data.users.length > 0) {
+            html += `<div class="section-label">Users (Private Chat)</div>`;
+            html += data.users.map(u => `
+                <div class="chat-item" onclick="startDM('${escapeHtml(u)}')">
+                    <div class="avatar">${escapeHtml(u[0])}</div>
+                    <div class="chat-info"><div class="chat-name">@${escapeHtml(u)}</div><div class="chat-preview">Tap to message</div></div>
+                </div>
+            `).join("");
+        }
+        if (data.rooms.length > 0) {
+            html += `<div class="section-label">Public Groups & Channels</div>`;
+            html += data.rooms.map(r => `
+                <div class="chat-item" onclick="joinRoom(${r.id})">
+                    <div class="avatar ${r.type}">${escapeHtml(r.name[0])}</div>
+                    <div class="chat-info"><div class="chat-name">${escapeHtml(r.name)}</div><div class="chat-preview">Tap to join ${r.type}</div></div>
+                </div>
+            `).join("");
+        }
+        if (!html) html = `<div style="padding:20px; text-align:center; color:#8c9ba5; font-size:13px;">Koi user ya group nahi mila.</div>`;
+        document.getElementById("chatList").innerHTML = html;
+    }
+
+    async function startDM(target) {
+        const res = await fetch("/api/dm", {
             method: "POST",
             headers: { "Content-Type": "application/json", "x-auth-token": myToken },
-            body: JSON.stringify({ bot_name: nameInput.value })
+            body: JSON.stringify({ target_username: target })
         });
         const data = await res.json();
-        if (!res.ok) { errDiv.innerText = data.detail || "Bot create nahi ho saka"; return; }
-        nameInput.value = "";
-        await loadBots();
+        document.getElementById("searchInput").value = "";
+        await loadRooms();
+        openRoom(data.room_id);
     }
 
-    async function deleteBot(id) {
-        await fetch(`/api/bots/${id}`, { method: "DELETE", headers: { "x-auth-token": myToken } });
-        await loadBots();
+    async function joinRoom(roomId) {
+        await fetch(`/api/rooms/${roomId}/join`, { method: "POST", headers: { "x-auth-token": myToken } });
+        document.getElementById("searchInput").value = "";
+        await loadRooms();
+        openRoom(roomId);
     }
 
-    function copyToken(token) {
-        navigator.clipboard.writeText(token);
-        alert("Bot Token copy ho gaya!");
+    async function openRoom(roomId) {
+        activeRoom = rooms.find(r => r.id === roomId);
+        if (!activeRoom) return;
+
+        document.body.classList.add("chat-open");
+        document.getElementById("chatHeader").style.display = "flex";
+        document.getElementById("activeRoomName").innerText = activeRoom.name;
+        document.getElementById("activeRoomMeta").innerText =
+            activeRoom.type === "dm" ? "Private Chat" : `${activeRoom.type.toUpperCase()} • ${activeRoom.members} members`;
+
+        const inputArea = document.getElementById("inputArea");
+        inputArea.style.display = "flex";
+        if (activeRoom.type === "channel" && activeRoom.owner !== myName) {
+            inputArea.innerHTML = `<div class="readonly-bar">📢 Is channel mein sirf Admin post kar sakta hai.</div>`;
+        } else {
+            inputArea.innerHTML = `
+                <input type="text" id="msgInput" placeholder="Message likhein..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button id="sendBtn" onclick="sendMessage()">Send</button>
+            `;
+        }
+
+        const res = await fetch(`/api/rooms/${roomId}/messages`, { headers: { "x-auth-token": myToken } });
+        const data = await res.json();
+        const msgBox = document.getElementById("messages");
+        msgBox.innerHTML = "";
+        (data.messages || []).forEach(appendMessage);
+        renderRoomList();
+    }
+
+    function closeMobileChat() {
+        document.body.classList.remove("chat-open");
+    }
+
+    function appendMessage(data) {
+        const msgBox = document.getElementById("messages");
+        const isMe = data.sender === myName;
+        const div = document.createElement("div");
+        div.className = `msg ${isMe ? "me" : "other"}`;
+        div.innerHTML = `
+            ${!isMe && activeRoom && activeRoom.type !== "dm" ? `<div class="msg-user">${escapeHtml(data.sender)}</div>` : ""}
+            <div>${escapeHtml(data.text)}</div>
+            <div class="msg-time">${escapeHtml(data.time)}</div>
+        `;
+        msgBox.appendChild(div);
+        msgBox.scrollTop = msgBox.scrollHeight;
+    }
+
+    function sendMessage() {
+        const input = document.getElementById("msgInput");
+        if (!input || !activeRoom) return;
+        const text = input.value.trim();
+        if (text && ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ action: "send_message", room_id: activeRoom.id, text }));
+            input.value = "";
+        }
+    }
+
+    function openCreateModal(type) {
+        createRoomType = type;
+        document.getElementById("createModalTitle").innerText = type === "group" ? "New Group" : "New Channel";
+        document.getElementById("newRoomName").value = "";
+        document.getElementById("createModal").style.display = "flex";
+    }
+
+    function closeCreateModal() {
+        document.getElementById("createModal").style.display = "none";
+    }
+
+    async function confirmCreateRoom() {
+        const name = document.getElementById("newRoomName").value.trim();
+        if (name.length < 2) return alert("Naam kam az kam 2 characters ka ho.");
+        const res = await fetch("/api/rooms/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-auth-token": myToken },
+            body: JSON.stringify({ name, type: createRoomType })
+        });
+        const data = await res.json();
+        closeCreateModal();
+        await loadRooms();
+        openRoom(data.room_id);
     }
 
     function logout() {
@@ -257,7 +367,7 @@
         location.reload();
     }
 
-    if (myToken && myName) connectWebSocket();
+    if (myToken && myName) initApp();
 </script>
 </body>
 </html>
